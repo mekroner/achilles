@@ -1,1 +1,4 @@
 /target
+/generated_files
+/dump
+*.log
