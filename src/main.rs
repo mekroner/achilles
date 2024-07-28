@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-use nes_lancer::{check_results, generate_files, run_queries, generate_queries, LancerConfig};
+use nes_lancer::{check_results, generate_files, generate_queries, run_queries, LancerConfig};
 use nes_types::NesType;
 
 #[tokio::main]
@@ -13,7 +13,7 @@ async fn main() {
         .expect("Simple Logger should not fail to init!");
     let config = LancerConfig::default();
     generate_files(&config);
-    let queries = generate_queries(&config);
-    run_queries(&queries, &config);
-    check_results(&config);
+    let mut queries = generate_queries(&config);
+    run_queries(&mut queries, &config).await;
+    check_results(&config, &queries);
 }

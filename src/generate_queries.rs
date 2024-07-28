@@ -1,44 +1,75 @@
-use std::path::Path;
+use std::path::PathBuf;
 
 use crate::QueryListEntry;
 use crate::{query_list::QueryExecutionProps, LancerConfig, QueryList};
 use nes_rust_client::prelude::*;
 use nes_rust_client::query::expr_gen::expr_gen::generate_logical_expr;
+use nes_rust_client::query::expression::binary_expression::BinaryExpr;
+use nes_rust_client::query::expression::expression::RawExpr;
+use nes_rust_client::query::expression::Field;
+use nes_rust_client::query::expression::LogicalExpr;
+use nes_rust_client::query::stringify::stringify_expr;
 use nes_types::NesType;
 
-pub fn generate_queries(config: LancerConfig) -> QueryList {
-    let entries = (0..1)
+pub fn generate_queries(config: &LancerConfig) -> QueryList {
+    log::info!("Started generating queries:");
+    let entries = (0..2)
         .map(|run_id| {
-            let origin_sink = origin_sink(run_id, &config.generated_files_path);
+            let origin_path = config
+                .generated_files_path
+                .join(format!("result-run{run_id}-origin.csv"));
+            let origin_sink = Sink::csv_file(&origin_path, false);
             let origin = QueryExecutionProps {
                 query_id: None,
                 start_time: None,
                 query: query_origin_filter(origin_sink),
+                result_path: PathBuf::from(origin_path),
             };
-            let others = (0..2)
+            let others = (0..10)
                 .map(|id| {
-                    let other_sink = other_sink(run_id, id, &config.generated_files_path);
+                    let other_path = config
+                        .generated_files_path
+                        .join(format!("result-run{run_id}-other{id}.csv"));
+                    let other_sink = Sink::csv_file(&other_path, false);
                     QueryExecutionProps {
                         query_id: None,
                         start_time: None,
                         query: query_part_filter(other_sink),
+                        result_path: PathBuf::from(other_path),
                     }
                 })
                 .collect();
             QueryListEntry { origin, others }
         })
         .collect();
+    log::info!("Generatong queries done!");
     QueryList { entries }
 }
 
-fn origin_sink(run_id: u32, path: &Path) -> Sink {
-    let file_path = path.join(format!("result{run_id}-origin.csv"));
-    Sink::csv_file(file_path.into_os_string().into_string().unwrap(), false)
+fn has_literal_literal(logical_expr: &LogicalExpr) -> bool {
+    let parents = logical_expr.0.leaf_parents();
+    for expr in parents {
+        let RawExpr::Binary(BinaryExpr { lhs, rhs, .. }) = expr else {
+            continue;
+        };
+        if let (RawExpr::Literal(_), RawExpr::Literal(_)) = (*lhs, *rhs) {
+            return true;
+        }
+    }
+    false
 }
 
-fn other_sink(run_id: u32, id: u32, path: &Path) -> Sink {
-    let file_path = path.join(format!("result{run_id}-{id}.csv"));
-    Sink::csv_file(file_path.into_os_string().into_string().unwrap(), false)
+fn generate_predicate(depth: u32, fields: &[Field]) -> LogicalExpr {
+    loop {
+        let Ok(p) = generate_logical_expr(depth, &fields) else {
+            continue;
+        };
+        if has_literal_literal(&p) {
+            log::debug!("Skipping predicate {} due to literal literal pattern.", stringify_expr(&p.0));
+            continue;
+        }
+        break p;
+    }
 }
 
 fn query_origin_filter(sink: Sink) -> Query {
@@ -46,18 +77,12 @@ fn query_origin_filter(sink: Sink) -> Query {
 }
 
 fn query_part_filter(sink: Sink) -> Query {
-    use nes_rust_client::query::expression::Field;
-
     let fields = [
         Field::typed("value", NesType::Int64),
         Field::typed("id", NesType::Int64),
     ];
+    let predicate = generate_predicate(1, &fields);
 
-    let predicate = loop {
-        if let Ok(p) = generate_logical_expr(1, &fields) {
-            break p;
-        }
-    };
     let query = QueryBuilder::from_source("test").filter(predicate.clone());
     let query_not = QueryBuilder::from_source("test").filter(predicate.not());
     query.union(query_not).sink(sink)

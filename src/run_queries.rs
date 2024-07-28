@@ -1,4 +1,8 @@
-use std::{path::PathBuf, thread, time::Duration};
+use std::{
+    path::PathBuf,
+    thread,
+    time::{Duration, Instant},
+};
 
 use nes_runner::{
     runner::Runner,
@@ -7,9 +11,9 @@ use nes_runner::{
 
 use nes_rust_client::prelude::*;
 
-use crate::{LancerConfig, QueryList};
+use crate::{LancerConfig, QueryList, QueryListEntry};
 
-pub async fn run_queries(queries: QueryList, config: &LancerConfig) -> _ {
+pub async fn run_queries(query_list: &mut QueryList, config: &LancerConfig) {
     let runner_config = RunnerConfig {
         coordinator_exec_path: "../../nebulastream/build/nes-coordinator/nesCoordinator".into(),
         worker_exec_path: "../../nebulastream/build/nes-worker/nesWorker".into(),
@@ -26,51 +30,48 @@ pub async fn run_queries(queries: QueryList, config: &LancerConfig) -> _ {
         output_io: OutputIO::Null,
     };
 
-    log::info!("Start coordinator and workers.");
     let mut runner = Runner::new(runner_config);
+    for (run_id, entry) in query_list.entries.iter_mut().enumerate() {
+        log::info!("Run queries in run {run_id}.");
+        execute_query_run(entry, &mut runner, config).await;
+    }
+}
+
+async fn execute_query_run(entry: &mut QueryListEntry, runner: &mut Runner, config: &LancerConfig) {
+    log::debug!("Start coordinator and workers.");
     runner.start_coordinator();
     thread::sleep(Duration::from_secs(2));
     runner.start_worker();
     thread::sleep(Duration::from_secs(1));
-    if runner.health_check().is_ok() {
-        log::info!(" Still running");
+    if let Err(err) = runner.health_check() {
+        log::warn!("Stopping Runner due to {err}");
+        runner.stop_all();
+        return;
     }
-    let runtime = NebulaStreamRuntime::new("127.0.0.1", 8081);
+    let runtime = NebulaStreamRuntime::new("127.0.0.1", 8000);
     let sources = runtime.logical_sources().await;
     log::info!("Logical Sources: {:?}", sources);
 
-    for i in queries.entries.iter() {
-        log::info!("Generate {i} of {queries_to_gen} query pairs.");
-        let (query0, query1) = query_filter();
-
-        log::info!("Connection status: {:?}", runtime.check_connection().await);
-        log::info!("Execute queries.");
-
-        let result0 = runtime
-            .execute_query(&query0, PlacementStrategy::BottomUp)
+    let queries = std::iter::once(&mut entry.origin).chain(entry.others.iter_mut());
+    for props in queries {
+        let result = runtime
+            .execute_query(&props.query, PlacementStrategy::BottomUp)
             .await;
-        log::info!("Query0 response: {:?}", result0);
-
-        let result1 = runtime
-            .execute_query(&query1, PlacementStrategy::BottomUp)
-            .await;
-        log::info!("Query1 response: {:?}", result1);
-        thread::sleep(Duration::from_secs(5));
-
-        match (result0, result1) {
-            (Ok(id0), Ok(id1)) => {
-                current_queries.push(id0);
-                current_queries.push(id1);
+        match result {
+            Ok(id) => {
+                props.query_id = Some(id);
+                props.start_time = Some(Instant::now());
             }
-            _ => {
-                log::error!("Failed to execute query. Stopping nes runner.");
-                runner.stop_all();
-                return;
-            }
+            Err(err) => log::warn!("Could not execute Query: {err}"),
+        }
+        if let Err(err) = runner.health_check() {
+            log::warn!("Stopping Runner due to {err}");
+            runner.stop_all();
+            return;
         }
     }
 
-    while !are_all_queries_stopped(&runtime, &current_queries).await {
+    while !are_all_queries_stopped(&runtime, &entry, &config).await {
         log::info!("Waiting for queries to stop execution...");
         thread::sleep(Duration::from_secs(5));
     }
@@ -79,16 +80,34 @@ pub async fn run_queries(queries: QueryList, config: &LancerConfig) -> _ {
     log::info!("Stopped coordinator and workers.");
 }
 
-async fn are_all_queries_stopped(runtime: &NebulaStreamRuntime, query_ids: &[i64]) -> bool {
+async fn are_all_queries_stopped(
+    runtime: &NebulaStreamRuntime,
+    entry: &QueryListEntry,
+    config: &LancerConfig,
+) -> bool {
     let mut all_stopped = true;
-    for &id in query_ids {
+    let queries = std::iter::once(&entry.origin).chain(entry.others.iter());
+    for props in queries {
+        let Some(id) = props.query_id else { continue };
+        let Some(time) = props.start_time else {
+            continue;
+        };
         let Ok(Some(status)) = runtime.query_status(id).await else {
-            panic!("Failed to check if query with id {id} has stopped!");
+            log::warn!("Failed to check if query with id {id} has stopped!");
+            continue;
         };
         log::debug!("Query with id {id } has status {status}.");
         if status != "STOPPED" {
-            all_stopped = false;
+            if timeout(time, config.max_query_exec_duration) {
+                log::warn!("Query {id} has timed out {:?}!", time.elapsed());
+            } else {
+                all_stopped = false;
+            }
         }
     }
     return all_stopped;
+}
+
+fn timeout(start_time: Instant, duration: Duration) -> bool {
+    duration < start_time.elapsed()
 }

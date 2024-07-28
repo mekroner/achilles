@@ -1,18 +1,26 @@
 use std::path::Path;
 
-use nes_eval::evaluator::Evaluator;
+use nes_eval::prelude::*;
+use nes_rust_client::query::stringify::stringify_query;
 
-use crate::LancerConfig;
+use crate::{LancerConfig, QueryList};
 
-pub fn check_results(config: &LancerConfig) {
+pub fn check_results(config: &LancerConfig, query_list: &QueryList) {
     log::info!("Checking results for equivalence:");
-    let eval = Evaluator::new();
-    let path0 = Path::new(&config.generated_files_path).join("result-0.csv");
-    let path1 = Path::new(&config.generated_files_path).join("result-1.csv");
-    match eval.are_files_equal(&path0, &path1) {
-        Ok(true) => log::info!("Result files are equal."),
-        Ok(false) => log::info!("Result files are not equal."),
-        Err(err) => log::error!("{err}"),
+    for entry in &query_list.entries {
+        for props in &entry.others {
+            log::info!(
+                "Check Results of Query {} and Query {}.",
+                stringify_query(&entry.origin.query),
+                stringify_query(&props.query)
+            );
+            match compare_files(&entry.origin.result_path, &props.result_path) {
+                Ok(ResultRelation::Equal) => log::info!("Result files are equal."),
+                Ok(ResultRelation::Reordered) => log::info!("Result files are reordered."),
+                Ok(ResultRelation::Diff) => log::warn!("Result files are not equal."),
+                Err(err) => log::error!("{err}"),
+            }
+        }
     }
     log::info!("Done, checking results for equivalence.");
 }
