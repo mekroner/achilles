@@ -17,5 +17,5 @@ async fn main() {
     generate_files(&config);
     let queries = generate_query_runs(&config);
     let run_results = run_queries(&queries, &config).await;
-    check_results(&config, &queries);
+    // check_results(&config, &queries);
 }

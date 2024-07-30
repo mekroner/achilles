@@ -11,5 +11,3 @@ pub use generate_files::generate_files;
 pub use check_results::check_results;
 pub use generate_queries::generate_query_runs;
 pub use run_queries::run_queries;
-pub use query_list::QueryList;
-pub use query_list::QueryListEntry;
