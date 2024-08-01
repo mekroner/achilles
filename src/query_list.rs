@@ -1,9 +1,9 @@
-use std::path::PathBuf;
+use std::{fmt::Display, path::PathBuf};
 
 use nes_rust_client::prelude::*;
 
 #[derive(Clone)]
-pub struct QueryRun {
+pub struct TestRun {
     pub run_id: u32,
     pub origin: QueryProps,
     pub others: Vec<QueryProps>,
@@ -20,21 +20,22 @@ pub struct QueryProps {
     pub lancer_query_id: LancerQueryId,
     pub query: Query,
     pub result_path: PathBuf,
+    pub status: QueryExecStatus,
 }
 
-pub struct QueryRunResult {
-    pub run_id: u32,
-    pub origin: QueryResultProps,
-    pub others: Vec<QueryResultProps>,
-}
-
-pub struct QueryResultProps {
-    pub query_props: QueryProps,
-    pub status: QueryResultStatus,
-}
-
-pub enum QueryResultStatus {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum QueryExecStatus {
+    Pending,
     Success,
-    Skipped,
     Failed,
+    TimedOut,
+}
+
+impl Display for LancerQueryId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LancerQueryId::Origin => write!(f, "Origin"),
+            LancerQueryId::Other(id) => write!(f, "Other {id}"),
+        }
+    }
 }

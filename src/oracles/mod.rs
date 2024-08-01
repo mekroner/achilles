@@ -46,7 +46,7 @@ pub fn query_part_filter(sink: Sink) -> Query {
         Field::typed("value", NesType::Int64),
         Field::typed("id", NesType::Int64),
     ];
-    let predicate = generate_predicate(1, &fields);
+    let predicate = generate_predicate(2, &fields);
 
     let query = QueryBuilder::from_source("test").filter(predicate.clone());
     let query_not = QueryBuilder::from_source("test").filter(predicate.not());

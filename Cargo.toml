@@ -9,7 +9,6 @@ edition = "2021"
 log = "0.4.21"
 nes-types = {path = "../nes-types"}
 nes-rust-client = {path = "../nes-rust-client"}
-nes-runner = {path = "../nes-runner"}
 nes-stream-gen = {path = "../nes-stream-gen/"}
 nes-eval = {path = "../nes-eval/"}
 simple_logger = "5.0.0"

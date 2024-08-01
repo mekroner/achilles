@@ -1,13 +1,7 @@
-use std::{
-    path::{Path, PathBuf},
-    thread,
-    time::Duration,
-};
-
 use nes_lancer::{
-    check_results, generate_files, generate_query_runs, run_queries, LancerConfig,
+    check_results, generate_files, generate_query_runs, run_queries::process_test_runs,
+    LancerConfig,
 };
-use nes_types::NesType;
 
 #[tokio::main]
 async fn main() {
@@ -16,6 +10,6 @@ async fn main() {
     let config = LancerConfig::default();
     generate_files(&config);
     let queries = generate_query_runs(&config);
-    let run_results = run_queries(&queries, &config).await;
-    // check_results(&config, &queries);
+    let run_results = process_test_runs(&config, queries).await;
+    check_results(run_results);
 }

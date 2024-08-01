@@ -616,19 +616,11 @@ version = "0.1.0"
 dependencies = [
  "log",
  "nes-eval",
- "nes-runner",
  "nes-rust-client",
  "nes-stream-gen",
  "nes-types",
  "simple_logger",
  "tokio",
-]
-
-[[package]]
-name = "nes-runner"
-version = "0.1.0"
-dependencies = [
- "log",
 ]
 
 [[package]]
