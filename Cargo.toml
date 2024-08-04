@@ -1,15 +1,17 @@
 [package]
-name = "nes-lancer"
+name = "achilles"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-log = "0.4.21"
 nes-types = {path = "../nes-types"}
 nes-rust-client = {path = "../nes-rust-client"}
-nes-stream-gen = {path = "../nes-stream-gen/"}
-nes-eval = {path = "../nes-eval/"}
+log = "0.4.21"
 simple_logger = "5.0.0"
 tokio = "1.38.0"
+csv = "1.3.0"
+rand = "0.8.5"
+yaml-rust2 = "0.8.1"
+ron = "0.8"
+clap = "4.5.13"
+

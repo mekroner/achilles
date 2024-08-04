@@ -3,16 +3,20 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::runner::runner::Runner;
+use crate::{
+    query_gen::test_case::{QueryProps, TestCase},
+    runner::runner::Runner,
+    test_case_exec::{QueryExecProps, QueryExecStatus, TestCaseExec},
+};
 use nes_rust_client::prelude::*;
 
-use crate::{query_list::*, LancerConfig};
+use crate::LancerConfig;
 
-pub async fn process_test_runs(config: &LancerConfig, runs: Vec<TestRun>) -> Vec<TestRun> {
+pub async fn process_test_cases(config: &LancerConfig, cases: Vec<TestCase>) -> Vec<TestCaseExec> {
     let start_time = Instant::now();
     let mut results = Vec::new();
-    for run in runs.into_iter() {
-        log::debug!("Starting test run {}.", run.run_id);
+    for run in cases.into_iter() {
+        log::debug!("Starting test case {}.", run.id);
         let result = process_test_run(run, config).await;
         results.push(result);
     }
@@ -20,7 +24,7 @@ pub async fn process_test_runs(config: &LancerConfig, runs: Vec<TestRun>) -> Vec
     results
 }
 
-async fn process_test_run(run: TestRun, config: &LancerConfig) -> TestRun {
+async fn process_test_run(run: TestCase, config: &LancerConfig) -> TestCaseExec {
     let runner = Arc::new(Mutex::new(Runner::new(config.runner_config.clone())));
     if let Err(err) = runner.lock().unwrap().start_all() {
         log::error!("Failed to start runner: {}", err);
@@ -30,7 +34,7 @@ async fn process_test_run(run: TestRun, config: &LancerConfig) -> TestRun {
     }
     let runtime = Arc::new(NebulaStreamRuntime::new("127.0.0.1", 8000));
     if !runtime.check_connection().await {
-        log::error!("Connection to runtime failed in run {}", run.run_id);
+        log::error!("Connection to runtime failed in run {}", run.id);
         runner.lock().unwrap().stop_all();
         panic!();
         //TODO: Handle runtime error
@@ -68,8 +72,8 @@ async fn process_test_run(run: TestRun, config: &LancerConfig) -> TestRun {
 
     runner.lock().unwrap().stop_all();
 
-    TestRun {
-        run_id: run.run_id,
+    TestCaseExec {
+        id: run.id,
         origin,
         others,
     }
@@ -78,9 +82,9 @@ async fn process_test_run(run: TestRun, config: &LancerConfig) -> TestRun {
 async fn process_query(
     runtime: &NebulaStreamRuntime,
     runner: Arc<Mutex<Runner>>,
-    mut props: QueryProps,
+    props: QueryProps,
     timeout_duration: Duration,
-) -> QueryProps {
+) -> QueryExecProps {
     let Ok(id) = runtime
         .execute_query(&props.query, PlacementStrategy::BottomUp)
         .await
@@ -89,8 +93,7 @@ async fn process_query(
             "Failed to execute query {}: Unable to register Query",
             props.lancer_query_id
         );
-        props.status = QueryExecStatus::Failed;
-        return props;
+        return QueryExecProps::from_with(props, QueryExecStatus::Failed);
     };
     log::trace!(
         "Success registering query {} with nes id {id}",
@@ -107,13 +110,11 @@ async fn process_query(
                 "Failed to execute query {}: Query was not registered.",
                 props.lancer_query_id
             );
-            props.status = QueryExecStatus::Failed;
-            return props;
+            return QueryExecProps::from_with(props, QueryExecStatus::Failed);
         };
         if status == QueryState::Stopped {
             log::info!("Executed query {} successful.", props.lancer_query_id);
-            props.status = QueryExecStatus::Success;
-            return props;
+            return QueryExecProps::from_with(props, QueryExecStatus::Success);
         }
 
         if runner.lock().unwrap().health_check().is_err() {
@@ -121,8 +122,7 @@ async fn process_query(
                 "Failed to execute query {}: Nebula Stream Crashed.",
                 props.lancer_query_id
             );
-            props.status = QueryExecStatus::Failed;
-            return props;
+            return QueryExecProps::from_with(props, QueryExecStatus::Failed);
         }
 
         let is_timeout = start_time.elapsed() > timeout_duration;
@@ -131,8 +131,7 @@ async fn process_query(
                 "Failed to execute query {}: Timed out.",
                 props.lancer_query_id
             );
-            props.status = QueryExecStatus::TimedOut;
-            return props;
+            return QueryExecProps::from_with(props, QueryExecStatus::TimedOut);
         }
     }
 }

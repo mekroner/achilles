@@ -1,0 +1,27 @@
+###
+### General configuration
+###
+
+logLevel: LOG_ERROR
+# logLevel: LOG_WARNING
+# logLevel: LOG_INFO
+# logLevel: LOG_DEBUG
+
+###
+### Network configuration
+###
+# localWorkerIp: 127.0.0.1
+# coordinatorIp: 127.0.0.1
+
+###
+### Physical source configuration
+###
+physicalSources:
+        - logicalSourceName: wind_turbines
+          physicalSourceName: wind_turbine_1
+          type: CSV_SOURCE
+          configuration:
+                  filePath: ./examples/example_configs/wind-turbine-1.csv
+                  skipHeader: true
+
+workerId: 2

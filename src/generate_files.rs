@@ -1,10 +1,11 @@
 use crate::config::LancerConfig;
-use nes_stream_gen::{
+use crate::stream_gen::{
     data_generator::{FieldGenerator, IncStrategy, RandomStrategy, RecordGenerator},
     physical_source::PhysicalSource,
-    stream_generator::{NesLogLevel, StreamGen},
-    Field, LogicalSource,
+    stream_gen::{NesLogLevel, StreamGen},
+    LogicalSource,
 };
+use nes_rust_client::query::expression::Field;
 use nes_types::NesType;
 
 pub fn generate_files(config: &LancerConfig) {
@@ -12,9 +13,9 @@ pub fn generate_files(config: &LancerConfig) {
     let logical_source = LogicalSource {
         source_name: "test".to_string(),
         fields: vec![
-            Field::new("ts", NesType::Int64),
-            Field::new("id", NesType::Int64),
-            Field::new("value", NesType::Int64),
+            Field::typed("ts", NesType::Int64),
+            Field::typed("id", NesType::Int64),
+            Field::typed("value", NesType::Int64),
         ],
     };
     let physical_source = PhysicalSource {

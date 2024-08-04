@@ -1,3 +1,6 @@
+pub mod generate_queries;
+pub mod query_id;
+pub mod test_case;
 
 use nes_rust_client::prelude::*;
 use nes_rust_client::query::expr_gen::expr_gen::generate_logical_expr;

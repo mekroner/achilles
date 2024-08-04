@@ -1,14 +1,9 @@
-use std::path::Path;
-
-use nes_eval::prelude::*;
+use super::evaluator::*;
 use nes_rust_client::query::stringify::stringify_query;
 
-use crate::{
-    query_list::{QueryExecStatus, TestRun},
-    LancerConfig,
-};
+use crate::test_case_exec::{QueryExecStatus, TestCaseExec};
 
-pub fn check_results(runs: Vec<TestRun>) {
+pub fn check_results(runs: Vec<TestCaseExec>) {
     log::info!("Checking results for equivalence:");
     for run in runs.iter() {
         for props in run.others.iter() {
@@ -16,17 +11,17 @@ pub fn check_results(runs: Vec<TestRun>) {
             if props.status != QueryExecStatus::Success {
                 log::warn!(
                     "Skipping result check for query {} because of execution state {:?}.",
-                    props.lancer_query_id,
+                    props.id(),
                     props.status
                 );
                 continue;
             }
             log::debug!(
                 "Check results of query {}: {}.",
-                props.lancer_query_id,
-                stringify_query(&props.query)
+                props.id(),
+                stringify_query(props.query())
             );
-            match compare_files(&run.origin.result_path, &props.result_path) {
+            match compare_files(run.origin.result_path(), props.result_path()) {
                 Ok(ResultRelation::Equal) => log::debug!("Result files are equal."),
                 Ok(ResultRelation::Reordered) => log::debug!("Result files are reordered."),
                 Ok(ResultRelation::Diff) => log::warn!("Result files are not equal."),

@@ -1,11 +1,12 @@
 use std::{path::PathBuf, time::Duration};
 
-use nes_runner::runner_config::{OutputIO, RunnerConfig};
+use crate::{runner::runner_config::{OutputIO, RunnerConfig}, stages::Stages};
 
 pub struct LancerConfig {
     pub generated_files_path: PathBuf,
     pub max_query_exec_duration: Duration,
     pub runner_config: RunnerConfig,
+    pub skip_to_stage: Stages,
 }
 
 impl Default for LancerConfig {
@@ -30,6 +31,7 @@ impl Default for LancerConfig {
             generated_files_path,
             max_query_exec_duration: Duration::from_secs(10),
             runner_config,
+            skip_to_stage: Stages::default(),
         }
     }
 }
