@@ -1,4 +1,4 @@
-use std::{path::PathBuf, time::Duration};
+use std::{path::{Path, PathBuf}, time::Duration};
 
 use crate::{runner::runner_config::{OutputIO, RunnerConfig}, stages::Stages};
 
@@ -8,6 +8,7 @@ pub struct LancerConfig {
     pub runner_config: RunnerConfig,
     pub skip_to_stage: Stages,
 }
+
 
 impl Default for LancerConfig {
     fn default() -> Self {
@@ -35,3 +36,29 @@ impl Default for LancerConfig {
         }
     }
 }
+
+// pub struct FilePathConfig {
+//     base: PathBuf,
+//     test_run: PathBuf,
+//     stream_config: PathBuf,
+// }
+
+// impl Default for FilePathConfig {
+//     fn default() -> Self {
+//         todo!()
+//     }
+// }
+
+// impl FilePathConfig {
+//     pub fn base(&self) -> &Path {
+//         &self.base
+//     }
+
+//     pub fn test_run(&self, id: u32) -> PathBuf {
+//         self.base.join(&self.test_run).join(id.to_string())
+//     }
+
+//     pub fn test_run(&self, id: u32) -> PathBuf {
+//         self.base.join(&self.test_run).join(id.to_string())
+//     }
+// }

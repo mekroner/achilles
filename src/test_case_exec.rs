@@ -136,7 +136,7 @@ impl TryFrom<&Yaml> for TestCaseExec {
 }
 
 pub fn read_test_case_execs_from_file(config: &LancerConfig) -> Vec<TestCaseExec> {
-    let path = config.generated_files_path.join("test_cases.yml");
+    let path = config.generated_files_path.join("test_case_execs.yml");
     let content = fs::read_to_string(path).expect("Should have been able to read the file!");
     let docs = YamlLoader::load_from_str(&content).expect("Should have been able to parse Yaml.");
     let doc = &docs.first().expect("Should have one element");
@@ -149,7 +149,7 @@ pub fn read_test_case_execs_from_file(config: &LancerConfig) -> Vec<TestCaseExec
 }
 
 pub fn write_test_case_execs_to_file(config: &LancerConfig, test_case_execs: &[TestCaseExec]) {
-    let path = config.generated_files_path.join("test_cases.yml");
+    let path = config.generated_files_path.join("test_case_execs.yml");
     let yaml_test_cases: Vec<Yaml> = test_case_execs
         .iter()
         .map(|test_case| test_case.into())

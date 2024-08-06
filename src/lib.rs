@@ -10,5 +10,5 @@ pub mod eval;
 
 pub use config::LancerConfig;
 pub use generate_files::generate_files;
-pub use eval::check_results::check_results;
+pub use eval::check_results::check_test_cases;
 pub use query_gen::generate_queries::generate_test_cases;

@@ -1,5 +1,7 @@
 use achilles::{
-    check_results, generate_files, generate_test_cases,
+    check_test_cases,
+    eval::check_results::write_test_case_result_to_file,
+    generate_files, generate_test_cases,
     query_gen::test_case::{read_test_cases_to_file, write_test_cases_to_file},
     run_queries::process_test_cases,
     stages::Stages,
@@ -36,7 +38,8 @@ async fn main() {
 
     if config.skip_to_stage <= Stages::Evaluation {
         let test_case_execs = read_test_case_execs_from_file(&config);
-        check_results(test_case_execs);
+        let test_case_results = check_test_cases(&test_case_execs);
+        write_test_case_result_to_file(&config, &test_case_results)
     } else {
         log::info!("Skipping Stage Evaluation...");
     }

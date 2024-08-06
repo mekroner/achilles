@@ -1,12 +1,24 @@
 use std::{cmp::Ordering, error::Error, path::Path};
 
 use csv::StringRecord;
+use yaml_rust2::Yaml;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum ResultRelation {
     Equal,
     Reordered,
     Diff,
+}
+
+impl Into<Yaml> for &ResultRelation {
+    fn into(self) -> Yaml {
+        let str = match self {
+            ResultRelation::Equal => "Equal",
+            ResultRelation::Reordered => "Reordered",
+            ResultRelation::Diff => "Diff",
+        };
+        Yaml::from_str(str)
+    }
 }
 
 pub fn compare_files(path0: &Path, path1: &Path) -> Result<ResultRelation, Box<dyn Error>> {
