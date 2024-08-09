@@ -7,6 +7,7 @@ pub mod runner;
 pub mod stream_gen;
 pub mod stages;
 pub mod eval;
+pub mod stream_schema;
 
 pub use config::LancerConfig;
 pub use generate_files::generate_files;

@@ -1,39 +1,77 @@
 use std::path::PathBuf;
 
-use crate::query_gen::{query_origin_filter, query_part_filter};
+use crate::query_gen::oracle::{QueryGenFactory, QueryGenStrategy};
+use crate::stream_gen::LogicalSource;
+use crate::stream_schema::StreamSchema;
 use crate::LancerConfig;
 use nes_rust_client::prelude::*;
+use nes_rust_client::query::expression::Field;
+use nes_types::NesType;
 
-use super::test_case::{QueryProps, TestCase};
+use super::{
+    oracle::QueryGen,
+    test_case::{QueryProps, TestCase},
+};
 
-pub fn generate_test_cases(config: &LancerConfig) -> Vec<TestCase> {
-    log::info!("Started generating queries:");
-    let runs = (0..1)
-        .map(|id| generate_test_case(id, config))
-        .collect();
-    log::info!("Done generating queries.");
-    runs
+pub struct TestConfig {
+    oracles: Vec<QueryGenStrategy>,
 }
 
-fn generate_test_case(id: u32, config: &LancerConfig) -> TestCase {
+pub fn generate_test_cases(config: &LancerConfig) -> Vec<TestCase> {
+    let query_gen_factory = QueryGenFactory::new();
+    let oracle_reps = 2;
+    let logical_source = LogicalSource {
+        source_name: "test".to_string(),
+        fields: vec![
+            Field::typed("ts", NesType::Int64),
+            Field::typed("id", NesType::Int64),
+            Field::typed("value", NesType::Int64),
+        ],
+    };
+    let schema = StreamSchema {
+        logical_sources: vec![logical_source],
+    };
+    let test_conf = TestConfig {
+        oracles: vec![QueryGenStrategy::Filter, QueryGenStrategy::AggregationMin],
+    };
+    log::info!("Started  generate_test_cases:");
+    let test_cases = test_conf
+        .oracles
+        .iter()
+        .enumerate()
+        .map(|(oracle_id, &strat)| {
+            let mut cases = vec![];
+            for rep_id in 0..oracle_reps {
+                let id = (oracle_id * oracle_reps + rep_id) as u32;
+                let query_gen = query_gen_factory.create_query_gen(&schema, strat);
+                let case = generate_test_case(id, config, &*query_gen);
+                cases.push(case);
+            }
+            cases
+        })
+        .flatten()
+        .collect();
+    log::info!("Done generating queries.");
+    test_cases
+}
+
+fn generate_test_case(id: u32, config: &LancerConfig, query_gen: &dyn QueryGen) -> TestCase {
     let origin_path = config
         .generated_files_path
-        .join(format!("result-run{id}-origin.csv"));
+        .join(format!("result-test-case{id}-origin.csv"));
     let origin_sink = Sink::csv_file(&origin_path, false);
-    let origin = QueryProps::origin(query_origin_filter(origin_sink), PathBuf::from(origin_path));
+    let q_origin = query_gen.origin().sink(origin_sink);
+    let origin = QueryProps::origin(q_origin, PathBuf::from(origin_path));
     let others = (0..2)
-        .map(|id| {
+        .map(|other_id| {
             let other_path = config
                 .generated_files_path
-                .join(format!("result-run{id}-other{id}.csv"));
+                .join(format!("result-test-case{id}-other{other_id}.csv"));
             let other_sink = Sink::csv_file(&other_path, false);
-            QueryProps::other(id, query_part_filter(other_sink), PathBuf::from(other_path))
+            let q_other = query_gen.other().sink(other_sink);
+            QueryProps::other(other_id, q_other, PathBuf::from(other_path))
         })
         .collect();
 
-    TestCase {
-        id,
-        origin,
-        others,
-    }
+    TestCase { id, origin, others }
 }

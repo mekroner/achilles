@@ -20,7 +20,7 @@ pub async fn process_test_cases(config: &LancerConfig, cases: Vec<TestCase>) -> 
         let result = process_test_run(run, config).await;
         results.push(result);
     }
-    log::info!("All test runs done in {:?}.", start_time.elapsed());
+    log::info!("All test cases done in {:?}.", start_time.elapsed());
     results
 }
 
@@ -104,25 +104,28 @@ async fn process_query(
     // Wait for query to stop
     loop {
         tokio::time::sleep(Duration::from_secs(2)).await;
-        log::trace!("Checking if query {} has stopped", props.lancer_query_id);
-        let Ok(Some(status)) = runtime.query_status(id).await else {
-            log::warn!(
-                "Failed to execute query {}: Query was not registered.",
-                props.lancer_query_id
-            );
-            return QueryExecProps::from_with(props, QueryExecStatus::Failed);
-        };
-        if status == QueryState::Stopped {
-            log::info!("Executed query {} successful.", props.lancer_query_id);
-            return QueryExecProps::from_with(props, QueryExecStatus::Success);
-        }
-
+        // first check if nes is still healthy
         if runner.lock().unwrap().health_check().is_err() {
             log::warn!(
                 "Failed to execute query {}: Nebula Stream Crashed.",
                 props.lancer_query_id
             );
             return QueryExecProps::from_with(props, QueryExecStatus::Failed);
+        }
+
+        // then get query state
+        log::trace!("Checking if query {} has stopped", props.lancer_query_id);
+        let Ok(Some(status)) = runtime.query_status(id).await else {
+            log::warn!(
+                "Failed to execute query {}: Unable to get query state.",
+                props.lancer_query_id
+            );
+            return QueryExecProps::from_with(props, QueryExecStatus::Failed);
+        };
+
+        if status == QueryState::Stopped {
+            log::info!("Executed query {} successful.", props.lancer_query_id);
+            return QueryExecProps::from_with(props, QueryExecStatus::Success);
         }
 
         let is_timeout = start_time.elapsed() > timeout_duration;

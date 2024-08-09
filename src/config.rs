@@ -1,6 +1,14 @@
-use std::{path::{Path, PathBuf}, time::Duration};
+use std::{
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
-use crate::{runner::runner_config::{OutputIO, RunnerConfig}, stages::Stages};
+use nes_rust_client::query::QueryBuilder;
+
+use crate::{
+    runner::runner_config::{OutputIO, RunnerConfig},
+    stages::Stages,
+};
 
 pub struct LancerConfig {
     pub generated_files_path: PathBuf,
@@ -8,7 +16,6 @@ pub struct LancerConfig {
     pub runner_config: RunnerConfig,
     pub skip_to_stage: Stages,
 }
-
 
 impl Default for LancerConfig {
     fn default() -> Self {
@@ -36,6 +43,7 @@ impl Default for LancerConfig {
         }
     }
 }
+
 
 // pub struct FilePathConfig {
 //     base: PathBuf,

@@ -64,11 +64,11 @@ impl Runner {
             log::info!("with Argument: {}", &arg);
             cmd.arg(arg);
         }
-        if let OutputIO::ToFile(_) = self.config.output_io {
-            cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
-        } else if OutputIO::Null == self.config.output_io {
-            cmd.stdout(Stdio::null()).stderr(Stdio::null());
-        }
+        match self.config.output_io {
+            OutputIO::ToFile(_) => cmd.stdout(Stdio::piped()).stderr(Stdio::piped()),
+            OutputIO::Null => cmd.stdout(Stdio::null()).stderr(Stdio::null()),
+            OutputIO::Print => cmd.stdout(Stdio::inherit()).stderr(Stdio::inherit()),
+        };
         cmd.spawn().expect("Executable field should be there!")
     }
 
@@ -104,8 +104,8 @@ impl Runner {
             let output = child_process
                 .wait_with_output()
                 .expect("Wait with output should not fail!");
-            let mut output_file =
-                File::create(file_path.join(file_name)).expect("Should not failt to create worker output file!");
+            let mut output_file = File::create(file_path.join(file_name))
+                .expect("Should not failt to create worker output file!");
             output_file
                 .write_all(&output.stdout)
                 .expect("Should not fail to write stdout to output file!");
