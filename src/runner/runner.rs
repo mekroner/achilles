@@ -7,6 +7,8 @@ use std::{
     time::Duration,
 };
 
+use crate::runner::runner_status::{ProcessStatus, RunnerStatus};
+
 use super::runner_config::{OutputIO, RunnerConfig};
 
 pub struct Runner {
@@ -40,7 +42,7 @@ impl Runner {
         self.workers.push(child);
     }
 
-    pub fn start_all(&mut self) -> Result<(), io::Error> {
+    pub fn start_all(&mut self) -> Result<RunnerStatus, io::Error> {
         self.start_coordinator();
         thread::sleep(Duration::from_secs(3));
         self.start_worker();
@@ -117,25 +119,24 @@ impl Runner {
         child_process.wait().expect("Wait should not fail!");
     }
 
-    pub fn health_check(&mut self) -> io::Result<()> {
-        log::info!("Check coordinators health:");
+    pub fn health_check(&mut self) -> io::Result<RunnerStatus> {
+        log::debug!("Check runner health:");
+        log::trace!("Check coordinators health:");
         let Some(ref mut coord) = self.coordinator else {
             panic!("Coordinator should exist!");
         };
-        match coord.try_wait() {
-            Ok(Some(status)) => log::info!("Coordinator has exited with {}", status),
-            Ok(None) => log::info!("Coordinator is running"),
-            Err(err) => panic!("Coordinator should either exited or still running! {}", err),
-        }
 
-        log::info!("Check workers health:");
+        let coordinator_status = ProcessStatus::try_from(coord)?;
+
+        log::trace!("Check workers health:");
+        let mut worker_status = Vec::new();
         for worker in self.workers.iter_mut() {
-            match worker.try_wait() {
-                Ok(Some(status)) => log::info!("Worker has exited with {}", status),
-                Ok(None) => log::info!("Woker is running"),
-                Err(err) => panic!("Worker should either exited or still running! {}", err),
-            }
+            let status = ProcessStatus::try_from(worker)?;
+            worker_status.push(status);
         }
-        Ok(())
+        Ok(RunnerStatus {
+            coordinator_status,
+            worker_status,
+        })
     }
 }

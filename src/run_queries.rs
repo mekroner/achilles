@@ -29,15 +29,15 @@ async fn process_test_run(run: TestCase, config: &LancerConfig) -> TestCaseExec 
     if let Err(err) = runner.lock().unwrap().start_all() {
         log::error!("Failed to start runner: {}", err);
         runner.lock().unwrap().stop_all();
-        panic!();
         //TODO: Handle runner error
+        panic!();
     }
     let runtime = Arc::new(NebulaStreamRuntime::new("127.0.0.1", 8000));
     if !runtime.check_connection().await {
         log::error!("Connection to runtime failed in run {}", run.id);
         runner.lock().unwrap().stop_all();
-        panic!();
         //TODO: Handle runtime error
+        panic!();
     }
 
     let runner_clone = runner.clone();
@@ -105,9 +105,10 @@ async fn process_query(
     loop {
         tokio::time::sleep(Duration::from_secs(2)).await;
         // first check if nes is still healthy
-        if runner.lock().unwrap().health_check().is_err() {
+        // TODO: Improve Check if runner is healthy
+        if !runner.lock().unwrap().health_check().unwrap().all_running() {
             log::warn!(
-                "Failed to execute query {}: Nebula Stream Crashed.",
+                "Failed to execute query {}: NebulaStream Crashed.",
                 props.lancer_query_id
             );
             return QueryExecProps::from_with(props, QueryExecStatus::Failed);
