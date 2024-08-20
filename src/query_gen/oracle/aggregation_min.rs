@@ -1,10 +1,9 @@
 use crate::{
-    query_gen::generate_predicate, stream_gen::LogicalSource, stream_schema::StreamSchema,
+    query_gen::util::{generate_aggregation, generate_predicate, generate_window_descriptor, random_source},
+    stream_gen::LogicalSource,
+    stream_schema::StreamSchema,
 };
-use nes_rust_client::{
-    prelude::*,
-    query::{self, expression::Field},
-};
+use nes_rust_client::prelude::*;
 
 use super::QueryGen;
 
@@ -15,31 +14,6 @@ pub struct AggregationMinOracle {
     source: LogicalSource,
     window_desc: WindowDescriptor,
     aggregation: Aggregation,
-}
-
-fn random_source(schema: &StreamSchema) -> LogicalSource {
-    use rand::seq::SliceRandom;
-    schema
-        .logical_sources
-        .choose(&mut rand::thread_rng())
-        .unwrap()
-        .clone()
-}
-
-// TODO: Actually implement this function!!!
-fn generate_window_descriptor() -> WindowDescriptor {
-    WindowDescriptor::TumblingWindow {
-        duration: query::time::Duration::from_minutes(5),
-        time_character: query::time::TimeCharacteristic::EventTime {
-            field_name: "ts".to_string(),
-            unit: query::time::TimeUnit::Minutes,
-        },
-    }
-}
-
-// TODO: Actually implement this function!!!
-fn generate_aggregation() -> Aggregation {
-    Aggregation::min("value")
 }
 
 impl QueryGen for AggregationMinOracle {

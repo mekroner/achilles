@@ -32,7 +32,11 @@ pub fn generate_test_cases(config: &LancerConfig) -> Vec<TestCase> {
         logical_sources: vec![logical_source],
     };
     let test_conf = TestConfig {
-        oracles: vec![QueryGenStrategy::Filter, QueryGenStrategy::AggregationMin],
+        oracles: vec![
+            QueryGenStrategy::Filter, 
+            QueryGenStrategy::Map,
+            QueryGenStrategy::AggregationMin
+        ],
     };
     log::info!("Started  generate_test_cases:");
     let test_cases = test_conf

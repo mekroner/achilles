@@ -8,7 +8,7 @@ nes-types = {path = "../nes-types"}
 nes-rust-client = {path = "../nes-rust-client"}
 log = "0.4.21"
 simple_logger = "5.0.0"
-tokio = "1.38.0"
+tokio = {version="1.38.0", features = ["macros", "rt-multi-thread"]}
 csv = "1.3.0"
 rand = "0.8.5"
 yaml-rust2 = "0.8.1"

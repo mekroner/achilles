@@ -1,6 +1,7 @@
 pub mod aggregation_min;
 pub mod filter;
 pub mod query_gen_factory;
+pub mod map;
 
 pub use query_gen_factory::{QueryGenFactory, QueryGenStrategy};
 

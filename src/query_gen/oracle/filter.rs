@@ -1,7 +1,7 @@
 use nes_rust_client::{prelude::*, query::expression::Field};
 
 use crate::{
-    query_gen::generate_predicate, stream_gen::LogicalSource, stream_schema::StreamSchema,
+    query_gen::util::{generate_predicate, random_source}, stream_gen::LogicalSource, stream_schema::StreamSchema,
 };
 
 use super::QueryGen;
@@ -13,14 +13,6 @@ pub struct FilterOracle {
     source: LogicalSource,
 }
 
-fn random_source(schema: &StreamSchema) -> LogicalSource {
-    use rand::seq::SliceRandom;
-    schema
-        .logical_sources
-        .choose(&mut rand::thread_rng())
-        .unwrap()
-        .clone()
-}
 
 impl QueryGen for FilterOracle {
     fn new(schema: &StreamSchema) -> Self {

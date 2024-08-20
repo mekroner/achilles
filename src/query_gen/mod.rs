@@ -2,43 +2,7 @@ pub mod generate_queries;
 pub mod oracle;
 pub mod query_id;
 pub mod test_case;
-
-use nes_rust_client::query::expr_gen::expr_gen::generate_logical_expr;
-use nes_rust_client::query::expression::binary_expression::BinaryExpr;
-use nes_rust_client::query::expression::expression::RawExpr;
-use nes_rust_client::query::expression::Field;
-use nes_rust_client::query::expression::LogicalExpr;
-use nes_rust_client::query::stringify::stringify_expr;
-
-fn has_literal_literal(logical_expr: &LogicalExpr) -> bool {
-    let parents = logical_expr.0.leaf_parents();
-    for expr in parents {
-        let RawExpr::Binary(BinaryExpr { lhs, rhs, .. }) = expr else {
-            continue;
-        };
-        if let (RawExpr::Literal(_), RawExpr::Literal(_)) = (*lhs, *rhs) {
-            return true;
-        }
-    }
-    false
-}
-
-fn generate_predicate(depth: u32, fields: &[Field]) -> LogicalExpr {
-    loop {
-        let Ok(p) = generate_logical_expr(depth, &fields) else {
-            continue;
-        };
-        if has_literal_literal(&p) {
-            log::debug!(
-                "Skipping predicate {} due to literal literal pattern.",
-                stringify_expr(&p.0)
-            );
-            continue;
-        }
-        break p;
-    }
-}
-
+pub mod util;
 
 // fn query_average() -> (Query, Query) {
 //     unimplemented!();
