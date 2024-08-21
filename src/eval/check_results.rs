@@ -6,23 +6,23 @@ use nes_rust_client::query::stringify::stringify_query;
 use yaml_rust2::{yaml::Hash, Yaml, YamlEmitter};
 
 use crate::{
-    query_gen::query_id::LancerQueryId,
-    test_case_exec::{QueryExecStatus, TestCaseExec},
+    query_gen::query_id::TestCaseId,
+    test_case_exec::{TestCaseExecStatus, TestSetExec},
     LancerConfig,
 };
 
-pub struct QueryResult {
-    id: LancerQueryId,
+pub struct TestCaseResult {
+    id: TestCaseId,
     relation: ResultRelation,
 }
 
-impl QueryResult {
-    pub const fn new(id: LancerQueryId, relation: ResultRelation) -> Self {
+impl TestCaseResult {
+    pub const fn new(id: TestCaseId, relation: ResultRelation) -> Self {
         Self { id, relation }
     }
 }
 
-impl Into<Yaml> for &QueryResult {
+impl Into<Yaml> for &TestCaseResult {
     fn into(self) -> Yaml {
         let mut map: Hash = Hash::new();
         map.insert(Yaml::String("id".into()), (&self.id).into());
@@ -31,28 +31,28 @@ impl Into<Yaml> for &QueryResult {
     }
 }
 
-pub struct TestCaseResult {
+pub struct TestSetResult {
     id: u32,
-    queries: Vec<QueryResult>,
+    test_cases: Vec<TestCaseResult>,
 }
 
-impl Into<Yaml> for &TestCaseResult {
+impl Into<Yaml> for &TestSetResult {
     fn into(self) -> Yaml {
         let mut map: Hash = Hash::new();
         map.insert(Yaml::String("id".into()), Yaml::Integer(self.id.into()));
-        let queries = self.queries.iter().map(|q| q.into()).collect();
-        map.insert(Yaml::String("queries".into()), Yaml::Array(queries));
+        let queries = self.test_cases.iter().map(|q| q.into()).collect();
+        map.insert(Yaml::String("test_cases".into()), Yaml::Array(queries));
         Yaml::Hash(map)
     }
 }
 
-pub fn write_test_case_result_to_file(config: &LancerConfig, test_case_results: &[TestCaseResult]) {
-    let path = config.generated_files_path.join("test_case_results.yml");
-    let yaml_test_cases: Vec<Yaml> = test_case_results
+pub fn write_test_set_results_to_file(config: &LancerConfig, test_set_results: &[TestSetResult]) {
+    let path = config.generated_files_path.join("test_set_results.yml");
+    let yaml_test_sets: Vec<Yaml> = test_set_results
         .iter()
-        .map(|test_case| test_case.into())
+        .map(|test_set| test_set.into())
         .collect();
-    let yaml_arr = Yaml::Array(yaml_test_cases);
+    let yaml_arr = Yaml::Array(yaml_test_sets);
     let mut out_str = String::new();
     let mut emitter = YamlEmitter::new(&mut out_str);
     emitter.dump(&yaml_arr).unwrap();
@@ -60,36 +60,36 @@ pub fn write_test_case_result_to_file(config: &LancerConfig, test_case_results: 
     write!(file, "{out_str}").unwrap();
 }
 
-pub fn check_test_cases(test_cases: &[TestCaseExec]) -> Vec<TestCaseResult> {
+pub fn check_test_sets(test_sets: &[TestSetExec]) -> Vec<TestSetResult> {
     log::info!("Checking results for equivalence:");
-    test_cases.iter()
-        .map(|test_case| {
-            let queries = check_test_case(test_case);
-            TestCaseResult {
-                id: test_case.id,
-                queries,
+    test_sets.iter()
+        .map(|test_set| {
+            let test_cases = check_test_set(test_set);
+            TestSetResult {
+                id: test_set.id,
+                test_cases,
             }
         })
         .collect()
 }
 
-fn check_test_case(test_case: &TestCaseExec) -> Vec<QueryResult> {
-    let mut queries = Vec::new();
-    for props in test_case.others.iter() {
-        if props.status != QueryExecStatus::Success {
+fn check_test_set(test_set: &TestSetExec) -> Vec<TestCaseResult> {
+    let mut test_case_results = Vec::new();
+    for test_case in test_set.others.iter() {
+        if test_case.status != TestCaseExecStatus::Success {
             log::warn!(
-                "Skipping result check for query {} because of execution state {:?}.",
-                props.id(),
-                props.status
+                "Skipping result check for test case {} because of execution state {:?}.",
+                test_case.id(),
+                test_case.status
             );
             continue;
         }
         log::debug!(
-            "Check results of query {}: {}.",
-            props.id(),
-            stringify_query(props.query())
+            "Check results of test case {}: {}.",
+            test_case.id(),
+            stringify_query(test_case.query())
         );
-        let relation = match compare_files(test_case.origin.result_path(), props.result_path()) {
+        let relation = match compare_files(test_set.origin.result_path(), test_case.result_path()) {
             Ok(ResultRelation::Equal) => {
                 log::debug!("Result files are equal.");
                 ResultRelation::Equal
@@ -107,8 +107,8 @@ fn check_test_case(test_case: &TestCaseExec) -> Vec<QueryResult> {
                 continue;
             }
         };
-        let query = QueryResult::new(props.id(), relation);
-        queries.push(query);
+        let test_case_result = TestCaseResult::new(test_case.id(), relation);
+        test_case_results.push(test_case_result);
     }
-    queries
+    test_case_results
 }

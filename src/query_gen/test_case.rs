@@ -10,30 +10,28 @@ use yaml_rust2::{yaml::Hash, Yaml, YamlEmitter};
 
 use crate::LancerConfig;
 
-use super::query_id::LancerQueryId;
+use super::query_id::TestCaseId;
 
 ///
 #[derive(Debug, Clone)]
-pub struct TestCase {
+pub struct TestSet {
     pub id: u32,
-    pub origin: QueryProps,
-    pub others: Vec<QueryProps>,
+    pub origin: TestCase,
+    pub others: Vec<TestCase>,
 }
 
 #[derive(Debug, Clone)]
-pub struct QueryProps {
-    pub lancer_query_id: LancerQueryId,
+pub struct TestCase {
+    pub id: TestCaseId,
     pub query: Query,
     pub result_path: PathBuf,
 }
 
-impl TestCase {}
-
-impl QueryProps {
+impl TestCase {
     /// Shorthand initalizer for `QueryProps`
-    pub fn new(lancer_query_id: LancerQueryId, query: Query, result_path: PathBuf) -> Self {
+    pub fn new(lancer_query_id: TestCaseId, query: Query, result_path: PathBuf) -> Self {
         Self {
-            lancer_query_id,
+            id: lancer_query_id,
             query,
             result_path,
         }
@@ -41,16 +39,16 @@ impl QueryProps {
 
     /// Shorthand initalizer for the origin `QueryProps`
     pub fn origin(query: Query, result_path: PathBuf) -> Self {
-        Self::new(LancerQueryId::Origin, query, result_path)
+        Self::new(TestCaseId::Origin, query, result_path)
     }
 
     /// Shorthand initalizer for the other `QueryProps`
     pub fn other(id: u32, query: Query, result_path: PathBuf) -> Self {
-        Self::new(LancerQueryId::Other(id), query, result_path)
+        Self::new(TestCaseId::Other(id), query, result_path)
     }
 
-    pub fn id(&self) -> LancerQueryId {
-        self.lancer_query_id
+    pub fn id(&self) -> TestCaseId {
+        self.id
     }
 
     pub fn query(&self) -> &Query {
@@ -64,8 +62,8 @@ impl QueryProps {
 
 // Yaml and that jazz
 /// Writes the `TestCase`s to the in `LancerConfig` specified location.
-pub fn write_test_cases_to_file(config: &LancerConfig, test_cases: &[TestCase]) {
-    let path = config.generated_files_path.join("test_cases.yml");
+pub fn write_test_sets_to_file(config: &LancerConfig, test_cases: &[TestSet]) {
+    let path = config.generated_files_path.join("test_sets.yml");
     let yaml_test_cases: Vec<Yaml> = test_cases
         .iter()
         .map(|test_case| test_case.into())
@@ -79,8 +77,8 @@ pub fn write_test_cases_to_file(config: &LancerConfig, test_cases: &[TestCase]) 
 }
 
 /// Reads the `TestCase`s to the in `LancerConfig` specified location.
-pub fn read_test_cases_to_file(config: &LancerConfig) -> Vec<TestCase> {
-    let path = config.generated_files_path.join("test_cases.yml");
+pub fn read_test_sets_to_file(config: &LancerConfig) -> Vec<TestSet> {
+    let path = config.generated_files_path.join("test_sets.yml");
     let content = fs::read_to_string(path).expect("Should have been able to read the file!");
     let docs = YamlLoader::load_from_str(&content).expect("Should have been able to parse Yaml.");
     let doc = &docs.first().expect("Should have one element");
@@ -92,7 +90,7 @@ pub fn read_test_cases_to_file(config: &LancerConfig) -> Vec<TestCase> {
         .collect()
 }
 
-impl Into<Yaml> for &TestCase {
+impl Into<Yaml> for &TestSet {
     fn into(self) -> Yaml {
         let mut map: Hash = Hash::new();
         map.insert(Yaml::String("id".into()), Yaml::Integer(self.id as i64));
@@ -103,7 +101,7 @@ impl Into<Yaml> for &TestCase {
     }
 }
 
-impl TryFrom<&Yaml> for TestCase {
+impl TryFrom<&Yaml> for TestSet {
     type Error = String;
     fn try_from(value: &Yaml) -> Result<Self, Self::Error> {
         let Some(id) = value["id"].as_i64() else {
@@ -115,7 +113,7 @@ impl TryFrom<&Yaml> for TestCase {
         };
         let others = arr
             .iter()
-            .map(|yaml_obj| QueryProps::try_from(yaml_obj))
+            .map(|yaml_obj| TestCase::try_from(yaml_obj))
             .collect::<Result<Vec<_>, Self::Error>>()?;
         Ok(Self {
             id: id as u32,
@@ -125,10 +123,10 @@ impl TryFrom<&Yaml> for TestCase {
     }
 }
 
-impl Into<Yaml> for &QueryProps {
+impl Into<Yaml> for &TestCase {
     fn into(self) -> Yaml {
         let mut map: Hash = Hash::new();
-        map.insert(Yaml::String("id".into()), (&self.lancer_query_id).into());
+        map.insert(Yaml::String("id".into()), (&self.id).into());
         map.insert(
             Yaml::String("query_string".into()),
             Yaml::String(stringify_query(self.query())),
@@ -145,11 +143,11 @@ impl Into<Yaml> for &QueryProps {
     }
 }
 
-impl TryFrom<&Yaml> for QueryProps {
+impl TryFrom<&Yaml> for TestCase {
     type Error = String;
 
     fn try_from(value: &Yaml) -> Result<Self, Self::Error> {
-        let id: LancerQueryId = (&value["id"]).try_into()?;
+        let id: TestCaseId = (&value["id"]).try_into()?;
         let Yaml::String(ref query_str) = value["query_ron"] else {
             return Err("Could not parse query string.".to_string());
         };
@@ -159,12 +157,12 @@ impl TryFrom<&Yaml> for QueryProps {
         let Yaml::String(ref path_str) = value["result_path"] else {
             return Err("Unable to parse result_path.".to_string());
         };
-        let query_props = Self {
-            lancer_query_id: id,
+        let test_case = Self {
+            id,
             query,
             result_path: PathBuf::from(path_str),
         };
-        Ok(query_props)
+        Ok(test_case)
     }
 }
 
@@ -178,9 +176,9 @@ mod yaml_tests {
     };
     use yaml_rust2::{Yaml, YamlEmitter, YamlLoader};
 
-    use crate::query_gen::test_case::QueryProps;
+    use crate::query_gen::test_case::TestCase;
 
-    use super::TestCase;
+    use super::TestSet;
 
     fn common_queries() -> Vec<Query> {
         let sink = Sink::csv_file("./result.csv", false);
@@ -226,14 +224,14 @@ mod yaml_tests {
     }
 
     #[test]
-    fn yaml_query_props() {
+    fn yaml_query_case() {
         let queries = common_queries();
         for (i, query) in queries.iter().enumerate() {
             let path = PathBuf::from("./result.csv");
             let props = if i == 0 {
-                QueryProps::origin(query.clone(), path)
+                TestCase::origin(query.clone(), path)
             } else {
-                QueryProps::other(i as u32, query.clone(), path)
+                TestCase::other(i as u32, query.clone(), path)
             };
             let (expected, result) = yaml_helper(&props);
             assert_eq!(expected, result);
@@ -241,22 +239,22 @@ mod yaml_tests {
     }
 
     #[test]
-    fn yaml_test_case() {
+    fn yaml_test_set() {
         let queries = common_queries();
         let path = PathBuf::from("./result.csv");
         let mut iter = queries.iter();
         let q_origin = iter.next().unwrap();
-        let origin = QueryProps::origin(q_origin.clone(), path.clone());
+        let origin = TestCase::origin(q_origin.clone(), path.clone());
         let others = iter
             .enumerate()
-            .map(|(i, q_other)| QueryProps::other(i as u32, q_other.clone(), path.clone()))
+            .map(|(i, q_other)| TestCase::other(i as u32, q_other.clone(), path.clone()))
             .collect();
-        let test_case = TestCase {
+        let test_set = TestSet {
             id: 42,
             origin,
             others,
         };
-        let (expected, result) = yaml_helper(&test_case);
+        let (expected, result) = yaml_helper(&test_set);
         assert_eq!(expected, result);
     }
 }

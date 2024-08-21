@@ -1,4 +1,4 @@
-use utils::yaml_data_type;
+use nes_type::YamlNesType;
 use yaml_rust2::{Yaml, YamlEmitter};
 
 use super::logical_source::LogicalSource;
@@ -90,7 +90,7 @@ impl StreamGen {
                     .iter()
                     .map(|field| YamlField {
                         name: field.name().to_string(),
-                        r#type: yaml_data_type(field.data_type()),
+                        r#type: YamlNesType::from(field.data_type()),
                     })
                     .collect();
                 YamlLogicalSource {

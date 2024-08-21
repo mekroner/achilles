@@ -1,4 +1,4 @@
-use nes_rust_client::query::expression::Field;
+use nes_rust_client::expression::Field;
 
 #[derive(Debug, Clone,)]
 pub struct LogicalSource {

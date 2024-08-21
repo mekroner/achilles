@@ -1,5 +1,5 @@
-use nes_types::NesType;
-use rand::{thread_rng, Rng};
+use nes_types::{FloatType, IntType, NesType};
+use rand::{rngs::ThreadRng, thread_rng, Rng};
 
 pub struct RecordGenerator {
     pub field_generators: Vec<FieldGenerator>,
@@ -50,8 +50,7 @@ pub trait FieldGeneratorStrategy {
     fn generate_field(&mut self, data_type: NesType) -> String;
 }
 
-pub struct RandomStrategy {
-}
+pub struct RandomStrategy {}
 
 impl FieldGeneratorStrategy for RandomStrategy {
     // FIXME: implement this function
@@ -61,11 +60,29 @@ impl FieldGeneratorStrategy for RandomStrategy {
             NesType::Undefined => panic!("FieldGenerator data_type cannot be Undefined"),
             NesType::Bool => rng.gen::<bool>().to_string(),
             NesType::Char => panic!("FieldGenerator char is currently not supported!"),
-            NesType::Int32 => rng.gen::<i32>().to_string(),
-            NesType::Int64 => rng.gen::<i64>().to_string(),
-            NesType::Float32 => rng.gen::<f32>().to_string(),
-            NesType::Float64 => rng.gen::<f64>().to_string(),
+            NesType::Int(t) => generate_int(&mut rng, t),
+            NesType::Float(t) => generate_float(&mut rng, t),
         }
+    }
+}
+
+fn generate_int(rng: &mut ThreadRng, data_type: IntType) -> String {
+    match data_type {
+        IntType::Signed8 => rng.gen::<i8>().to_string(),
+        IntType::Unsigned8 => rng.gen::<u8>().to_string(),
+        IntType::Signed16 => rng.gen::<i16>().to_string(),
+        IntType::Unsigned16 => rng.gen::<u16>().to_string(),
+        IntType::Signed32 => rng.gen::<i32>().to_string(),
+        IntType::Unsigned32 => rng.gen::<u32>().to_string(),
+        IntType::Signed64 => rng.gen::<i64>().to_string(),
+        IntType::Unsigned64 => rng.gen::<u64>().to_string(),
+    }
+}
+
+fn generate_float(rng: &mut ThreadRng, data_type: FloatType) -> String {
+    match data_type {
+        FloatType::Bit32 => rng.gen::<f32>().to_string(),
+        FloatType::Bit64 => rng.gen::<f64>().to_string(),
     }
 }
 

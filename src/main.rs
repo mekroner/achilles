@@ -1,14 +1,14 @@
 use achilles::{
-    check_test_cases,
-    eval::check_results::write_test_case_result_to_file,
-    generate_files, generate_test_cases,
-    query_gen::test_case::{read_test_cases_to_file, write_test_cases_to_file},
-    run_queries::process_test_cases,
+    check_test_sets,
+    eval::check_results::write_test_set_results_to_file,
+    generate_files, generate_test_sets,
+    query_gen::test_case::{read_test_sets_to_file, write_test_sets_to_file},
+    run_queries::process_test_sets,
     stages::Stages,
-    test_case_exec::{read_test_case_execs_from_file, write_test_case_execs_to_file},
+    stream_schema::read_stream_schema_from_file,
+    test_case_exec::{read_test_set_execs_from_file, write_test_set_execs_to_file},
     LancerConfig,
 };
-
 #[tokio::main]
 async fn main() {
     simple_logger::init_with_level(log::Level::Debug)
@@ -22,24 +22,25 @@ async fn main() {
     }
 
     if config.skip_to_stage <= Stages::QueryGen {
-        let test_cases = generate_test_cases(&config);
-        write_test_cases_to_file(&config, &test_cases);
+        let schema = read_stream_schema_from_file(&config);
+        let test_sets = generate_test_sets(&config, &schema);
+        write_test_sets_to_file(&config, &test_sets);
     } else {
         log::info!("Skipping Stage QueryGen...");
     }
 
     if config.skip_to_stage <= Stages::QueryExec {
-        let test_cases = read_test_cases_to_file(&config);
-        let test_case_execs = process_test_cases(&config, test_cases).await;
-        write_test_case_execs_to_file(&config, &test_case_execs);
+        let test_sets = read_test_sets_to_file(&config);
+        let test_set_execs = process_test_sets(&config, test_sets).await;
+        write_test_set_execs_to_file(&config, &test_set_execs);
     } else {
         log::info!("Skipping Stage QueryExec...");
     }
 
     if config.skip_to_stage <= Stages::Evaluation {
-        let test_case_execs = read_test_case_execs_from_file(&config);
-        let test_case_results = check_test_cases(&test_case_execs);
-        write_test_case_result_to_file(&config, &test_case_results)
+        let test_set_execs = read_test_set_execs_from_file(&config);
+        let test_set_results = check_test_sets(&test_set_execs);
+        write_test_set_results_to_file(&config, &test_set_results)
     } else {
         log::info!("Skipping Stage Evaluation...");
     }

@@ -1,10 +1,15 @@
+use nes_rust_client::expression::{Field, LogicalExpr};
 use std::net::Ipv4Addr;
 use yaml_rust2::{yaml::Hash, Yaml};
+
+use crate::stream_gen::{logical_source, LogicalSource};
+
+use super::nes_type::YamlNesType;
 
 #[allow(non_snake_case)]
 pub struct YamlField {
     pub name: String,
-    pub r#type: String,
+    pub r#type: YamlNesType,
 }
 
 #[allow(non_snake_case)]
@@ -54,6 +59,56 @@ impl Into<Yaml> for &YamlCoordinatorConfig {
     }
 }
 
+#[allow(non_snake_case)]
+impl TryFrom<&Yaml> for YamlCoordinatorConfig {
+    type Error = String;
+
+    // FIXME: Ther could be optional parameters
+    fn try_from(value: &Yaml) -> Result<Self, Self::Error> {
+        let Yaml::String(ref log_level) = value["logLevel"] else {
+            return Err("Failed to parse YamlCoordinatorConfig: LogLevel".to_string());
+        };
+        let Yaml::String(ref coordinator_ip) = value["coordinatorIp"] else {
+            return Err("Failed to parse YamlCoordinatorConfig: coordinatorIp".to_string());
+        };
+        let Ok(coordinatorIp) = coordinator_ip.parse::<Ipv4Addr>() else {
+            return Err(
+                "Failed to parse YamlCoordinatorConfig: coordinatorIp not valid.".to_string(),
+            );
+        };
+        let Yaml::Integer(rest_port) = value["restPort"] else {
+            return Err("Failed to parse YamlCoordinatorConfig: restPort".to_string());
+        };
+        let Yaml::Integer(rpc_port) = value["rpcPort"] else {
+            return Err("Failed to parse YamlCoordinatorConfig: rpcPort".to_string());
+        };
+        let Yaml::Array(ref sources) = value["logicalSources"] else {
+            return Err("Failed to parse YamlCoordinatorConfig: logicalSources".to_string());
+        };
+        let logicalSources = sources
+            .into_iter()
+            .map(|source| source.try_into())
+            .collect::<Result<Vec<YamlLogicalSource>, _>>()?;
+        Ok(Self {
+            logLevel: log_level.to_string(),
+            coordinatorIp,
+            restPort: rest_port as u32,
+            rpcPort: rpc_port as u32,
+            logicalSources,
+        })
+    }
+}
+
+// YamlLogicalSource
+impl Into<LogicalSource> for YamlLogicalSource {
+    fn into(self) -> LogicalSource {
+        LogicalSource {
+            source_name: self.logicalSourceName,
+            fields: self.fields.into_iter().map(|field| field.into()).collect(),
+        }
+    }
+}
+
 impl Into<Yaml> for &YamlLogicalSource {
     fn into(self) -> Yaml {
         let mut config_map: Hash = Hash::new();
@@ -72,6 +127,34 @@ impl Into<Yaml> for &YamlLogicalSource {
     }
 }
 
+impl TryFrom<&Yaml> for YamlLogicalSource {
+    type Error = String;
+
+    fn try_from(value: &Yaml) -> Result<Self, Self::Error> {
+        let Yaml::String(ref name) = value["logicalSourceName"] else {
+            return Err("Failed to parse YamlLogicalSource: logicalSourceName.".into());
+        };
+        let Yaml::Array(ref fields_arr) = value["fields"] else {
+            return Err("Failed to parse YamlLogicalSource: logicalSourceName.".into());
+        };
+        let fields = fields_arr
+            .into_iter()
+            .map(|field| field.try_into())
+            .collect::<Result<Vec<YamlField>, _>>()?;
+        Ok(Self {
+            logicalSourceName: name.to_string(),
+            fields,
+        })
+    }
+}
+
+// YamlField
+impl Into<Field> for YamlField {
+    fn into(self) -> Field {
+        Field::typed(self.name, self.r#type.into())
+    }
+}
+
 impl Into<Yaml> for &YamlField {
     fn into(self) -> Yaml {
         let mut config_map: Hash = Hash::new();
@@ -79,10 +162,22 @@ impl Into<Yaml> for &YamlField {
             Yaml::String("name".into()),
             Yaml::String(self.name.to_string()),
         );
-        config_map.insert(
-            Yaml::String("type".into()),
-            Yaml::String(self.r#type.to_string()),
-        );
+        config_map.insert(Yaml::String("type".into()), self.r#type.into());
         Yaml::Hash(config_map)
+    }
+}
+
+impl TryFrom<&Yaml> for YamlField {
+    type Error = String;
+
+    fn try_from(value: &Yaml) -> Result<Self, Self::Error> {
+        let Yaml::String(ref name) = value["name"] else {
+            return Err("Failed to parse YamlField: name.".into());
+        };
+        let data_type = (&value["type"]).try_into()?;
+        Ok(Self {
+            name: name.to_string(),
+            r#type: data_type,
+        })
     }
 }

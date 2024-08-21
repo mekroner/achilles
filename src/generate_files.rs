@@ -5,7 +5,7 @@ use crate::stream_gen::{
     stream_gen::{NesLogLevel, StreamGen},
     LogicalSource,
 };
-use nes_rust_client::query::expression::Field;
+use nes_rust_client::expression::Field;
 use nes_types::NesType;
 
 pub fn generate_files(config: &LancerConfig) {
@@ -13,9 +13,9 @@ pub fn generate_files(config: &LancerConfig) {
     let logical_source = LogicalSource {
         source_name: "test".to_string(),
         fields: vec![
-            Field::typed("ts", NesType::Int64),
-            Field::typed("id", NesType::Int64),
-            Field::typed("value", NesType::Int64),
+            Field::typed("ts", NesType::i64()),
+            Field::typed("id", NesType::i64()),
+            Field::typed("value", NesType::i64()),
         ],
     };
     let physical_source = PhysicalSource {
@@ -23,9 +23,9 @@ pub fn generate_files(config: &LancerConfig) {
         generator: RecordGenerator {
             record_count: 100,
             field_generators: vec![
-                FieldGenerator::new("ts", NesType::Int64, IncStrategy::new()),
-                FieldGenerator::new("id", NesType::Int64, RandomStrategy {}),
-                FieldGenerator::new("value", NesType::Int64, RandomStrategy {}),
+                FieldGenerator::new("ts", NesType::i64(), IncStrategy::new()),
+                FieldGenerator::new("id", NesType::i64(), RandomStrategy {}),
+                FieldGenerator::new("value", NesType::i64(), RandomStrategy {}),
             ],
         },
     };

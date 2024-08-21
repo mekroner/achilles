@@ -1,9 +1,11 @@
 use crate::{
-    query_gen::util::{generate_aggregation, generate_predicate, generate_window_descriptor, random_source},
+    query_gen::util::{
+        generate_aggregation, generate_predicate, generate_window_descriptor, random_source,
+    },
     stream_gen::LogicalSource,
     stream_schema::StreamSchema,
 };
-use nes_rust_client::prelude::*;
+use nes_rust_client::{prelude::*, query::time::{Duration, TimeCharacteristic, TimeUnit}};
 
 use super::QueryGen;
 
@@ -22,7 +24,7 @@ impl QueryGen for AggregationMinOracle {
         let window_desc = generate_window_descriptor();
         let aggregation = generate_aggregation();
         Self {
-            predicate_depth: 3,
+            predicate_depth: 1,
             source,
             window_desc,
             aggregation,
@@ -39,6 +41,14 @@ impl QueryGen for AggregationMinOracle {
     fn other(&self) -> QueryBuilder {
         let predicate = generate_predicate(self.predicate_depth, &self.source.fields);
         let builder = QueryBuilder::from_source(&self.source.source_name);
+        let union_window = WindowDescriptor::TumblingWindow {
+            duration: Duration::from_minutes(5),
+            time_character: TimeCharacteristic::EventTime {
+                field_name: "start".to_string(),
+                unit: TimeUnit::Milliseconds,
+            },
+        };
+
         let query = builder
             .clone()
             .filter(predicate.clone())
@@ -50,7 +60,7 @@ impl QueryGen for AggregationMinOracle {
             .apply([self.aggregation.clone()]);
         query
             .union(query_not)
-            .window(self.window_desc.clone())
+            .window(union_window)
             .apply([self.aggregation.clone()])
     }
 }

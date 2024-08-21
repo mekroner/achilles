@@ -8,8 +8,9 @@ pub mod stream_gen;
 pub mod stages;
 pub mod eval;
 pub mod stream_schema;
+pub mod expr_gen;
 
 pub use config::LancerConfig;
 pub use generate_files::generate_files;
-pub use eval::check_results::check_test_cases;
-pub use query_gen::generate_queries::generate_test_cases;
+pub use eval::check_results::check_test_sets;
+pub use query_gen::generate_queries::generate_test_sets;
