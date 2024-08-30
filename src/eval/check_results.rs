@@ -6,8 +6,8 @@ use nes_rust_client::query::stringify::stringify_query;
 use yaml_rust2::{yaml::Hash, Yaml, YamlEmitter};
 
 use crate::{
-    query_gen::query_id::TestCaseId,
     test_case_exec::{TestCaseExecStatus, TestSetExec},
+    test_case_gen::query_id::TestCaseId,
     LancerConfig,
 };
 
@@ -46,8 +46,12 @@ impl Into<Yaml> for &TestSetResult {
     }
 }
 
-pub fn write_test_set_results_to_file(config: &LancerConfig, test_set_results: &[TestSetResult]) {
-    let path = config.generated_files_path.join("test_set_results.yml");
+pub fn write_test_set_results_to_file(
+    test_run_id: u32,
+    config: &LancerConfig,
+    test_set_results: &[TestSetResult],
+) {
+    let path = config.path_config.test_set_results(test_run_id);
     let yaml_test_sets: Vec<Yaml> = test_set_results
         .iter()
         .map(|test_set| test_set.into())
@@ -62,7 +66,8 @@ pub fn write_test_set_results_to_file(config: &LancerConfig, test_set_results: &
 
 pub fn check_test_sets(test_sets: &[TestSetExec]) -> Vec<TestSetResult> {
     log::info!("Checking results for equivalence:");
-    test_sets.iter()
+    test_sets
+        .iter()
         .map(|test_set| {
             let test_cases = check_test_set(test_set);
             TestSetResult {
@@ -73,7 +78,7 @@ pub fn check_test_sets(test_sets: &[TestSetExec]) -> Vec<TestSetResult> {
         .collect()
 }
 
-fn check_test_set(test_set: &TestSetExec) -> Vec<TestCaseResult> {
+pub fn check_test_set(test_set: &TestSetExec) -> Vec<TestCaseResult> {
     let mut test_case_results = Vec::new();
     for test_case in test_set.others.iter() {
         if test_case.status != TestCaseExecStatus::Success {

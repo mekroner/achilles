@@ -1,6 +1,6 @@
 use crate::expr_gen::expr_gen::generate_raw_expr;
 use crate::{
-    query_gen::util::{generate_predicate, random_source},
+    test_case_gen::util::{generate_predicate, random_source},
     stream_gen::LogicalSource,
     stream_schema::StreamSchema,
 };

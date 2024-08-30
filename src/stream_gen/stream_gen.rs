@@ -56,16 +56,16 @@ impl StreamGen {
 
     // FIXME: Use Custom Error type here
     pub fn generate(&mut self) -> Result<(), Box<dyn Error>> {
-        if self.override_files && self.path.exists() {
-            log::info!("Overriding existing files in path: {:?}", self.path);
-            fs::remove_dir_all(&self.path)?;
-        }
+        // if self.override_files && self.path.exists() {
+        //     log::info!("Overriding existing files in path: {:?}", self.path);
+        //     fs::remove_dir_all(&self.path)?;
+        // }
 
-        let worker_dir_path: PathBuf = self.path.as_path().join("workers");
-        let data_dir_path: PathBuf = self.path.as_path().join("data");
+        let worker_dir_path: PathBuf = self.path.join("workers");
+        let data_dir_path: PathBuf = self.path.join("data");
 
-        fs::create_dir(&self.path)?;
-        log::info!("Created dir {:?}", self.path);
+        // fs::create_dir(&self.path)?;
+        // log::info!("Created dir {:?}", self.path);
         self.generate_coordinator_config(&self.path);
 
         fs::create_dir(&worker_dir_path)?;

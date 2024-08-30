@@ -61,6 +61,14 @@ pub fn generate_window_descriptor() -> WindowDescriptor {
 }
 
 // TODO: Actually implement this function!!!
-pub fn generate_aggregation() -> Aggregation {
-    Aggregation::min("value")
+pub fn generate_aggregation(source: &LogicalSource) -> Aggregation {
+    use rand::seq::IteratorRandom;
+    let mut rng = rand::thread_rng();
+    let field = source
+        .fields
+        .iter()
+        .filter(|field| field.name() != "ts")
+        .choose(&mut rng)
+        .expect("Expect to get random field.");
+    Aggregation::min(field.name())
 }

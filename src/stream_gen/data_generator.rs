@@ -92,7 +92,7 @@ pub struct IncStrategy {
 
 impl IncStrategy {
     pub fn new() -> Self {
-        Self { counter: 0 }
+        Self { counter: 1 }
     }
 }
 

@@ -20,6 +20,13 @@ pub struct TestSet {
     pub others: Vec<TestCase>,
 }
 
+impl TestSet {
+    pub fn test_case(&self, id: TestCaseId) -> Option<&TestCase> {
+        let mut iter = std::iter::once(&self.origin).chain(self.others.iter());
+        iter.find(|test_case| test_case.id == id)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct TestCase {
     pub id: TestCaseId,
@@ -62,8 +69,8 @@ impl TestCase {
 
 // Yaml and that jazz
 /// Writes the `TestCase`s to the in `LancerConfig` specified location.
-pub fn write_test_sets_to_file(config: &LancerConfig, test_cases: &[TestSet]) {
-    let path = config.generated_files_path.join("test_sets.yml");
+pub fn write_test_sets_to_file(test_run_id: u32, config: &LancerConfig, test_cases: &[TestSet]) {
+    let path = config.path_config.test_sets(test_run_id);
     let yaml_test_cases: Vec<Yaml> = test_cases
         .iter()
         .map(|test_case| test_case.into())
@@ -77,8 +84,8 @@ pub fn write_test_sets_to_file(config: &LancerConfig, test_cases: &[TestSet]) {
 }
 
 /// Reads the `TestCase`s to the in `LancerConfig` specified location.
-pub fn read_test_sets_to_file(config: &LancerConfig) -> Vec<TestSet> {
-    let path = config.generated_files_path.join("test_sets.yml");
+pub fn read_test_sets_to_file(test_run_id: u32, config: &LancerConfig) -> Vec<TestSet> {
+    let path = config.path_config.test_sets(test_run_id);
     let content = fs::read_to_string(path).expect("Should have been able to read the file!");
     let docs = YamlLoader::load_from_str(&content).expect("Should have been able to parse Yaml.");
     let doc = &docs.first().expect("Should have one element");
@@ -176,7 +183,7 @@ mod yaml_tests {
     };
     use yaml_rust2::{Yaml, YamlEmitter, YamlLoader};
 
-    use crate::query_gen::test_case::TestCase;
+    use crate::test_case_gen::test_case::TestCase;
 
     use super::TestSet;
 

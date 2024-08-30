@@ -1,5 +1,5 @@
 use crate::{
-    query_gen::util::{
+    test_case_gen::util::{
         generate_aggregation, generate_predicate, generate_window_descriptor, random_source,
     },
     stream_gen::LogicalSource,
@@ -22,9 +22,9 @@ impl QueryGen for AggregationMinOracle {
     fn new(schema: &StreamSchema) -> Self {
         let source = random_source(&schema);
         let window_desc = generate_window_descriptor();
-        let aggregation = generate_aggregation();
+        let aggregation = generate_aggregation(&source);
         Self {
-            predicate_depth: 1,
+            predicate_depth: 3,
             source,
             window_desc,
             aggregation,

@@ -1,0 +1,111 @@
+---
+- id: 0
+  test_cases:
+    - id: Other2
+      relation: Equal
+- id: 1
+  test_cases:
+    - id: Other0
+      relation: Equal
+    - id: Other1
+      relation: Equal
+    - id: Other2
+      relation: Equal
+    - id: Other3
+      relation: Diff
+    - id: Other4
+      relation: Equal
+- id: 2
+  test_cases:
+    - id: Other0
+      relation: Equal
+    - id: Other1
+      relation: Equal
+    - id: Other2
+      relation: Equal
+    - id: Other3
+      relation: Equal
+    - id: Other4
+      relation: Equal
+- id: 3
+  test_cases:
+    - id: Other0
+      relation: Equal
+    - id: Other1
+      relation: Equal
+    - id: Other3
+      relation: Equal
+    - id: Other4
+      relation: Equal
+- id: 4
+  test_cases:
+    - id: Other0
+      relation: Equal
+    - id: Other1
+      relation: Equal
+    - id: Other2
+      relation: Equal
+    - id: Other3
+      relation: Equal
+    - id: Other4
+      relation: Equal
+- id: 5
+  test_cases:
+    - id: Other0
+      relation: Equal
+    - id: Other1
+      relation: Equal
+    - id: Other2
+      relation: Equal
+    - id: Other3
+      relation: Equal
+    - id: Other4
+      relation: Equal
+- id: 6
+  test_cases:
+    - id: Other0
+      relation: Equal
+    - id: Other1
+      relation: Equal
+    - id: Other2
+      relation: Equal
+    - id: Other3
+      relation: Equal
+    - id: Other4
+      relation: Equal
+- id: 7
+  test_cases:
+    - id: Other0
+      relation: Diff
+    - id: Other1
+      relation: Equal
+    - id: Other2
+      relation: Equal
+    - id: Other3
+      relation: Equal
+    - id: Other4
+      relation: Equal
+- id: 8
+  test_cases:
+    - id: Other0
+      relation: Equal
+    - id: Other1
+      relation: Equal
+    - id: Other2
+      relation: Equal
+    - id: Other3
+      relation: Equal
+    - id: Other4
+      relation: Equal
+- id: 9
+  test_cases:
+    - id: Other0
+      relation: Equal
+    - id: Other1
+      relation: Equal
+    - id: Other2
+      relation: Equal
+    - id: Other3
+      relation: Equal
+    - id: Other4
+      relation: Equal

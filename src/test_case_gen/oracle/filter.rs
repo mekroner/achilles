@@ -1,7 +1,7 @@
 use nes_rust_client::prelude::*;
 
 use crate::{
-    query_gen::util::{generate_predicate, random_source}, stream_gen::LogicalSource, stream_schema::StreamSchema,
+    test_case_gen::util::{generate_predicate, random_source}, stream_gen::LogicalSource, stream_schema::StreamSchema,
 };
 
 use super::QueryGen;

@@ -1,4 +1,4 @@
-pub mod generate_queries;
+pub mod generate_test_sets;
 pub mod oracle;
 pub mod query_id;
 pub mod test_case;

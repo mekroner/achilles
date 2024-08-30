@@ -5,7 +5,7 @@ use std::io::Write;
 use yaml_rust2::{yaml::Hash, Yaml, YamlEmitter, YamlLoader};
 
 use crate::{
-    query_gen::{query_id::TestCaseId, test_case::TestCase},
+    test_case_gen::{query_id::TestCaseId, test_case::TestCase},
     LancerConfig,
 };
 
@@ -28,6 +28,7 @@ pub enum TestCaseExecStatus {
     Success,
     Failed,
     TimedOut,
+    Skipped,
 }
 
 impl TestCaseExec {
@@ -97,7 +98,7 @@ impl TryFrom<&Yaml> for TestCaseExec {
     fn try_from(value: &Yaml) -> Result<Self, Self::Error> {
         let query = TestCase::try_from(&value["query"])?;
         let status = TestCaseExecStatus::try_from(&value["status"])?;
-        Ok(Self { query, status, })
+        Ok(Self { query, status })
     }
 }
 
@@ -135,8 +136,8 @@ impl TryFrom<&Yaml> for TestSetExec {
     }
 }
 
-pub fn read_test_set_execs_from_file(config: &LancerConfig) -> Vec<TestSetExec> {
-    let path = config.generated_files_path.join("test_set_execs.yml");
+pub fn read_test_set_execs_from_file(test_run_id: u32, config: &LancerConfig) -> Vec<TestSetExec> {
+    let path = config.path_config.test_set_execs(test_run_id);
     let content = fs::read_to_string(path).expect("Should have been able to read the file!");
     let docs = YamlLoader::load_from_str(&content).expect("Should have been able to parse Yaml.");
     let doc = &docs.first().expect("Should have one element");
@@ -148,8 +149,12 @@ pub fn read_test_set_execs_from_file(config: &LancerConfig) -> Vec<TestSetExec> 
         .collect()
 }
 
-pub fn write_test_set_execs_to_file(config: &LancerConfig, test_case_execs: &[TestSetExec]) {
-    let path = config.generated_files_path.join("test_set_execs.yml");
+pub fn write_test_set_execs_to_file(
+    test_run_id: u32,
+    config: &LancerConfig,
+    test_case_execs: &[TestSetExec],
+) {
+    let path = config.path_config.test_set_execs(test_run_id);
     let yaml_test_cases: Vec<Yaml> = test_case_execs
         .iter()
         .map(|test_case| test_case.into())

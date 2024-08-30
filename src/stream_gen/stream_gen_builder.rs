@@ -58,6 +58,11 @@ impl StreamGenBuilder {
         self
     }
 
+    pub fn add_source_bundle(mut self, source_bundle: SourceBundle) -> Self {
+        self.sources.push(source_bundle);
+        self
+    }
+
     pub fn add_logical_source(self, logical_source: LogicalSource) -> LogicalSourceBuilder {
         LogicalSourceBuilder {
             stream_gen_builder: self,
