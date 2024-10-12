@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
+use crate::config::NetworkConfig;
+
 use super::{
-    net_config::NetworkConfig,
     stream_gen::{NesLogLevel, StreamGen},
     LogicalSource, PhysicalSource, SourceBundle,
 };

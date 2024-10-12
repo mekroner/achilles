@@ -17,6 +17,7 @@ pub fn generate_files(test_run_id: u32, config: &LancerConfig) {
 
     let builder = StreamGen::builder()
         .in_path(&config.path_config.test_run(test_run_id))
+        .network_config(config.net_config.clone())
         .coordinator_log_level(NesLogLevel::Debug)
         .worker_log_level(NesLogLevel::Debug)
         .add_source_bundles(source_bundles);

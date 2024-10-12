@@ -1,8 +1,8 @@
-use nes_rust_client::expression::{Field, LogicalExpr};
+use nes_rust_client::expression::Field;
 use std::net::Ipv4Addr;
 use yaml_rust2::{yaml::Hash, Yaml};
 
-use crate::stream_gen::{logical_source, LogicalSource};
+use crate::stream_gen::LogicalSource;
 
 use super::nes_type::YamlNesType;
 

@@ -71,7 +71,10 @@ pub async fn process_single_test_case(
     runner.start_all();
 
     //setup runtime
-    let runtime = NebulaStreamRuntime::new("127.0.0.1", 8000);
+    let runtime = NebulaStreamRuntime::new(
+        config.net_config.coord_ip.to_string(),
+        config.net_config.coord_rest_port.into(),
+    );
 
     let test_case_exec = process_test_case_with_pre_check(
         &runtime,

@@ -1,8 +1,9 @@
 use nes_type::YamlNesType;
 use yaml_rust2::{Yaml, YamlEmitter};
 
+use crate::config::NetworkConfig;
+
 use super::logical_source::LogicalSource;
-use super::net_config::NetworkConfig;
 use super::physical_source::PhysicalSource;
 use super::stream_gen_builder::StreamGenBuilder;
 use super::yaml::*;
@@ -103,8 +104,8 @@ impl StreamGen {
             logLevel: self.coordinator_log_level.to_string(),
             logicalSources: logical_source,
             coordinatorIp: self.network_config.coord_ip,
-            restPort: self.network_config.rest_port.into(),
-            rpcPort: self.network_config.rpc_port.into(),
+            restPort: self.network_config.coord_rest_port.into(),
+            rpcPort: self.network_config.coord_rpc_port.into(),
         };
         let yaml_obj: Yaml = (&coordinator_config).into();
         let mut out_str = String::new();

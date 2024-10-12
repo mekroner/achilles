@@ -1,5 +1,4 @@
 pub mod data_generator;
-pub mod net_config;
 pub mod physical_source;
 pub mod logical_source;
 pub mod stream_gen;

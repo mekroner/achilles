@@ -1,6 +1,5 @@
 use std::{
-    path::{Path, PathBuf},
-    time::Duration,
+    net::Ipv4Addr, path::{Path, PathBuf}, time::Duration
 };
 
 use crate::{
@@ -21,6 +20,24 @@ pub struct LancerConfig {
     pub runner_config: RunnerConfig,
     pub skip_to_stage: Stages,
     pub test_config: TestConfig,
+    pub net_config:NetworkConfig,
+}
+
+#[derive(Clone)]
+pub struct NetworkConfig {
+    pub coord_ip: Ipv4Addr,
+    pub coord_rest_port: u16,
+    pub coord_rpc_port: u16,
+}
+
+impl Default for NetworkConfig {
+    fn default() -> Self {
+        Self {
+            coord_ip: Ipv4Addr::LOCALHOST,
+            coord_rest_port: 8000,
+            coord_rpc_port: 4000,
+        }
+    }
 }
 
 impl Default for LancerConfig {
@@ -37,10 +54,10 @@ impl Default for LancerConfig {
             oracles: vec![
                 // QueryGenStrategy::Filter,
                 // QueryGenStrategy::Map,
-                QueryGenStrategy::AggregationMin,
+                // QueryGenStrategy::AggregationMin,
                 QueryGenStrategy::AggregationAvg,
             ],
-            oracle_reps: 5,
+            oracle_reps: 1,
             test_case_count: 4,
         };
 
@@ -51,6 +68,7 @@ impl Default for LancerConfig {
             runner_config,
             skip_to_stage: Stages::default(),
             test_config,
+            net_config: NetworkConfig::default(),
         }
     }
 }
