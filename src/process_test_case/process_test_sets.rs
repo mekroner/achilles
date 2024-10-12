@@ -115,6 +115,7 @@ pub async fn process_test_set(
         &config.test_case_timeout,
     )
     .await;
+    post_check_restart(&origin, &mut runner).await;
     let mut others = Vec::new();
     for other in test_set.others.into_iter() {
         let other_exec = process_test_case_with_pre_check(
@@ -124,6 +125,7 @@ pub async fn process_test_set(
             &config.test_case_timeout,
         )
         .await;
+        post_check_restart(&other_exec, &mut runner).await;
         others.push(other_exec);
         thread::sleep(sleep_duration);
     }
@@ -150,6 +152,15 @@ async fn pre_check(runner: &mut Runner, runtime: &NebulaStreamRuntime) -> bool {
         return false;
     }
     true
+}
+
+/// check if the exec was correct, else restart the runner.
+async fn post_check_restart(exec: &TestCaseExec, runner: &mut Runner) {
+    if exec.status == TestCaseExecStatus::Success {
+        return;
+    }
+    runner.stop_all();
+    runner.start_all();
 }
 
 async fn process_test_case_with_pre_check(
@@ -225,6 +236,13 @@ async fn process_test_case(
         let is_timeout = start_time.elapsed() > *timeout_duration;
         if is_timeout {
             log::warn!("Failed to execute test case {}: Timed out.", test_case.id);
+            // To stop the query is apparently not effective because nebula stream is stuck
+            // if let Err(err) = runtime.stop_query(id).await {
+            //     log::error!(
+            //         "Failed to stop test_case {} after time out: {err}",
+            //         test_case.id
+            //     );
+            // }
             return TestCaseExec::from_with(test_case, TestCaseExecStatus::TimedOut);
         }
     }

@@ -11,6 +11,8 @@ use nes_rust_client::expression::{
     Field, LogicalExpr,
 };
 
+const EARLY_STOP: f64 = 0.25;
+
 pub struct GenerationError(String);
 
 impl Display for GenerationError {
@@ -39,7 +41,7 @@ pub fn generate_raw_expr(
     output_type: NesType,
 ) -> Result<RawExpr, GenerationError> {
     let mut rng = rand::thread_rng();
-    if depth == 0 {
+    if depth == 0 || rng.gen_bool(EARLY_STOP){
         let is_field = rng.gen_bool(0.75);
         if is_field {
             let Some(field) = generate_field(fields, output_type) else {
