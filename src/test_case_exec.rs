@@ -26,7 +26,7 @@ pub struct TestCaseExec {
 pub enum TestCaseExecStatus {
     Pending,
     Success,
-    Failed,
+    Failed(String),
     TimedOut,
     Skipped,
 }
@@ -54,13 +54,19 @@ impl TestCaseExec {
 
 impl Into<Yaml> for &TestCaseExecStatus {
     fn into(self) -> Yaml {
+        let mut map: Hash = Hash::new();
         let str = match self {
+            TestCaseExecStatus::Skipped => "Skipped",
             TestCaseExecStatus::Pending => "Pending",
             TestCaseExecStatus::Success => "Success",
-            TestCaseExecStatus::Failed => "Failed",
+            TestCaseExecStatus::Failed(_) => "Failed",
             TestCaseExecStatus::TimedOut => "TimedOut",
         };
-        Yaml::from_str(str)
+        map.insert(Yaml::String("status".into()), Yaml::from_str(str));
+        if let TestCaseExecStatus::Failed(reason) = self {
+            map.insert(Yaml::String("reason".into()), Yaml::from_str(reason));
+        }
+        Yaml::Hash(map)
     }
 }
 
@@ -68,13 +74,21 @@ impl TryFrom<&Yaml> for TestCaseExecStatus {
     type Error = String;
 
     fn try_from(value: &Yaml) -> Result<Self, Self::Error> {
-        let Yaml::String(str) = value else {
+        let Yaml::String(ref status) = value["status"] else {
             return Err("Failed to parse QueryExecStatus. Expected Yaml::String.".to_string());
         };
-        match str.as_str() {
+        match status.as_str() {
+            "Skipped" => Ok(TestCaseExecStatus::Skipped),
             "Pending" => Ok(TestCaseExecStatus::Pending),
             "Success" => Ok(TestCaseExecStatus::Success),
-            "Failed" => Ok(TestCaseExecStatus::Failed),
+            "Failed" => {
+                let Yaml::String(ref reason) = value["reason"] else {
+                    return Err(
+                        "Failed to parse QueryExecStatus::Failed. Unable to pase reason.".into(),
+                    );
+                };
+                Ok(TestCaseExecStatus::Failed(reason.into()))
+            }
             "TimedOut" => Ok(TestCaseExecStatus::TimedOut),
             err => Err(format!(
                 "Failed to Parse QueryExecStatus. Unknown state: {err}"

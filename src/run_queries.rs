@@ -1,3 +1,4 @@
+//deprechiated
 use std::{
     os::unix::process,
     sync::{Arc, Mutex},

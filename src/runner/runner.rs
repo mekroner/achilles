@@ -34,18 +34,17 @@ impl Runner {
         self.coordinator = Some(child);
     }
 
-    pub fn start_worker(&mut self) {
-        let child = self.start_sub_process(
-            &self.config.worker_exec_path,
-            self.config.worker_config_path.as_deref(),
-        );
-        self.workers.push(child);
+    pub fn start_workers(&mut self) {
+        for path in &self.config.worker_config_path {
+            let child = self.start_sub_process(&self.config.worker_exec_path, Some(path));
+            self.workers.push(child);
+        }
     }
 
     pub fn start_all(&mut self) -> Result<RunnerStatus, io::Error> {
         self.start_coordinator();
         thread::sleep(Duration::from_secs(3));
-        self.start_worker();
+        self.start_workers();
         thread::sleep(Duration::from_secs(3));
         self.health_check()
     }

@@ -2,6 +2,7 @@ pub mod aggregation_min;
 pub mod filter;
 pub mod query_gen_factory;
 pub mod map;
+pub mod aggregation_avg;
 
 pub use query_gen_factory::{QueryGenFactory, QueryGenStrategy};
 

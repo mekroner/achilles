@@ -1,21 +1,18 @@
 use std::{
+    path::{Path, PathBuf},
     thread,
     time::{Duration, Instant},
 };
 
-use nes_rust_client::{
-    query::time::Duration,
-    runtime::{
-        nebula_stream_runtime::{NebulaStreamRuntime, PlacementStrategy},
-        query_state::QueryState,
-    },
+use nes_rust_client::runtime::{
+    nebula_stream_runtime::{NebulaStreamRuntime, PlacementStrategy},
+    query_state::QueryState,
 };
 
 use crate::{
-    process_test_case,
     runner::runner::Runner,
     test_case_exec::{TestCaseExec, TestCaseExecStatus, TestSetExec},
-    test_case_gen::test_case::{TestCase, TestSet},
+    test_case_gen::test_case::{self, TestCase, TestSet},
     LancerConfig,
 };
 
@@ -35,6 +32,58 @@ pub async fn process_test_sets(
     results
 }
 
+fn files_in_dir(path: &Path) -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    if !path.is_dir() {
+        log::warn!("{:?} is not a dir.", path);
+        return files;
+    }
+    let Ok(entries) = std::fs::read_dir(path) else {
+        log::warn!("Failed to read {:?}", path);
+        return files;
+    };
+    for entry in entries {
+        if let Ok(entry) = entry {
+            let path = entry.path();
+            if path.is_file() {
+                files.push(path);
+            }
+        }
+    }
+    files
+}
+
+pub async fn process_single_test_case(
+    test_run_id: u32,
+    test_case: TestCase,
+    config: &LancerConfig,
+) -> TestCaseExec {
+    let sleep_duration = Duration::from_secs(2);
+
+    //setup runner
+    // FIXME: This should be nicer
+    let mut runner_config = config.runner_config.clone();
+    runner_config.coordinator_config_path =
+        Some(config.path_config.coordinator_config(test_run_id));
+    runner_config.worker_config_path =
+        files_in_dir(&config.path_config.worker_configs(test_run_id));
+    let mut runner = Runner::new(runner_config);
+    runner.start_all();
+
+    //setup runtime
+    let runtime = NebulaStreamRuntime::new("127.0.0.1", 8000);
+
+    let test_case_exec = process_test_case_with_pre_check(
+        &runtime,
+        &mut runner,
+        test_case,
+        &config.test_case_timeout,
+    )
+    .await;
+    runner.stop_all();
+    test_case_exec
+}
+
 pub async fn process_test_set(
     test_run_id: u32,
     test_set: TestSet,
@@ -43,13 +92,19 @@ pub async fn process_test_set(
     let sleep_duration = Duration::from_secs(2);
 
     //setup runner
+    // FIXME: This should be nicer
     let mut runner_config = config.runner_config.clone();
     runner_config.coordinator_config_path =
         Some(config.path_config.coordinator_config(test_run_id));
-    runner_config.worker_config_path = Some(config.path_config.worker_configs(test_run_id));
-    let runner = Runner::new(runner_config);
+    runner_config.worker_config_path =
+        files_in_dir(&config.path_config.worker_configs(test_run_id));
+    let mut runner = Runner::new(runner_config);
+    runner.start_all();
 
-    let runtime = connect_runtime();
+    //setup runtime
+    let runtime = NebulaStreamRuntime::new("127.0.0.1", 8000);
+
+    // run test cases
     let origin = process_test_case_with_pre_check(
         &runtime,
         &mut runner,
@@ -69,6 +124,7 @@ pub async fn process_test_set(
         others.push(other_exec);
         thread::sleep(sleep_duration);
     }
+    // clean up
     runner.stop_all();
     TestSetExec {
         id: test_set.id,
@@ -78,10 +134,19 @@ pub async fn process_test_set(
 }
 
 /// returns false if the pre check encountered an error, that is if the runner encountered an error
-/// or if the runtime was unable to connect
+/// or if the runtime was unable to connect. If everything is working as expected this function
+/// returns true
 // FIXME: actually do something
 async fn pre_check(runner: &mut Runner, runtime: &NebulaStreamRuntime) -> bool {
-    todo!()
+    if !runner.health_check().unwrap().all_running() {
+        log::warn!("NebulaStream crashed.");
+        return false;
+    }
+    if !runtime.check_connection().await {
+        log::warn!("Unable to connect to NebulaStream.");
+        return false;
+    }
+    true
 }
 
 async fn process_test_case_with_pre_check(
@@ -91,6 +156,7 @@ async fn process_test_case_with_pre_check(
     timeout_duration: &Duration,
 ) -> TestCaseExec {
     if !pre_check(runner, &runtime).await {
+        log::warn!("Skipping test case.");
         return TestCaseExec::from_with(test_case, TestCaseExecStatus::Skipped);
     }
     process_test_case(&runtime, runner, test_case, &timeout_duration).await
@@ -108,11 +174,9 @@ async fn process_test_case(
     let id = match response {
         Ok(id) => id,
         Err(err) => {
-            log::warn!(
-                "Failed to execute test case {}: Unable to register Query: {err}",
-                test_case.id
-            );
-            return TestCaseExec::from_with(test_case, TestCaseExecStatus::Failed);
+            let error_str = format!("Unable to register query: {err}");
+            log::warn!("Failed to execute test case {}: {error_str}", test_case.id);
+            return TestCaseExec::from_with(test_case, TestCaseExecStatus::Failed(error_str));
         }
     };
     log::trace!(
@@ -123,15 +187,18 @@ async fn process_test_case(
     let start_time = Instant::now();
     // Wait for query to stop
     loop {
-        tokio::time::sleep(Duration::from_secs(2)).await;
+        thread::sleep(Duration::from_secs(2));
         // first check if nes is still healthy
         // TODO: Improve Check if runner is healthy
-        if !runner.lock().unwrap().health_check().unwrap().all_running() {
+        let runner_status = runner.health_check().unwrap();
+        if !runner_status.all_running() {
             log::warn!(
                 "Failed to execute test_case {}: NebulaStream Crashed.",
                 test_case.id
             );
-            return TestCaseExec::from_with(test_case, TestCaseExecStatus::Failed);
+            let error_str = format!("NES crashed: {:?}", runner_status.collect_errors());
+            log::warn!("RunnerStatus: {:?}", runner_status.collect_errors());
+            return TestCaseExec::from_with(test_case, TestCaseExecStatus::Failed(error_str));
         }
 
         // then get query state
@@ -141,7 +208,10 @@ async fn process_test_case(
                 "Failed to execute test_case {}: Unable to get query state.",
                 test_case.id
             );
-            return TestCaseExec::from_with(test_case, TestCaseExecStatus::Failed);
+            return TestCaseExec::from_with(
+                test_case,
+                TestCaseExecStatus::Failed("Unable to get query state.".into()),
+            );
         };
 
         if status == QueryState::Stopped {

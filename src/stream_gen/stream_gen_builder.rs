@@ -1,7 +1,9 @@
 use std::path::PathBuf;
 
 use super::{
-    net_config::NetworkConfig, stream_gen::{NesLogLevel, StreamGen}, LogicalSource, PhysicalSource, SourceBundle
+    net_config::NetworkConfig,
+    stream_gen::{NesLogLevel, StreamGen},
+    LogicalSource, PhysicalSource, SourceBundle,
 };
 
 #[derive(Default)]
@@ -60,6 +62,16 @@ impl StreamGenBuilder {
 
     pub fn add_source_bundle(mut self, source_bundle: SourceBundle) -> Self {
         self.sources.push(source_bundle);
+        self
+    }
+
+    pub fn add_source_bundles(
+        mut self,
+        source_bundles: impl IntoIterator<Item = SourceBundle>,
+    ) -> Self {
+        for source_bundle in source_bundles {
+            self.sources.push(source_bundle)
+        }
         self
     }
 

@@ -60,6 +60,19 @@ pub fn generate_window_descriptor() -> WindowDescriptor {
     }
 }
 
+/// returns a random field that is not the ts
+pub fn get_random_field_name(source: &LogicalSource) -> String{
+    use rand::seq::IteratorRandom;
+    let mut rng = rand::thread_rng();
+    let field = source
+        .fields
+        .iter()
+        .filter(|field| field.name() != "ts")
+        .choose(&mut rng)
+        .expect("Expect to get random field.");
+    field.name().to_string()
+}
+
 // TODO: Actually implement this function!!!
 pub fn generate_aggregation(source: &LogicalSource) -> Aggregation {
     use rand::seq::IteratorRandom;

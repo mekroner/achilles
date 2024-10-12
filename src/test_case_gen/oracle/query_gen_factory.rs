@@ -1,5 +1,6 @@
 use crate::stream_schema::StreamSchema;
 
+use super::aggregation_avg::AggregationAvgOracle;
 use super::aggregation_min::AggregationMinOracle;
 use super::filter::FilterOracle;
 use super::map::MapOracle;
@@ -10,6 +11,10 @@ pub enum QueryGenStrategy {
     Filter,
     Map,
     AggregationMin,
+    AggregationMax,
+    AggregationSum,
+    AggregationCount,
+    AggregationAvg,
 }
 
 pub struct QueryGenFactory {}
@@ -28,6 +33,10 @@ impl QueryGenFactory {
             QueryGenStrategy::Filter => Box::new(FilterOracle::new(schema)),
             QueryGenStrategy::Map => Box::new(MapOracle::new(schema)),
             QueryGenStrategy::AggregationMin => Box::new(AggregationMinOracle::new(schema)),
+            QueryGenStrategy::AggregationMax => todo!(),
+            QueryGenStrategy::AggregationSum => todo!(),
+            QueryGenStrategy::AggregationCount => todo!(),
+            QueryGenStrategy::AggregationAvg => Box::new(AggregationAvgOracle::new(schema)),
         }
     }
 }

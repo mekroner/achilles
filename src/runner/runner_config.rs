@@ -6,7 +6,7 @@ pub struct RunnerConfig {
     pub coordinator_exec_path: PathBuf,
     pub worker_exec_path: PathBuf,
     pub coordinator_config_path: Option<PathBuf>,
-    pub worker_config_path: Option<PathBuf>,
+    pub worker_config_path: Vec<PathBuf>,
     pub output_io: OutputIO,
 }
 

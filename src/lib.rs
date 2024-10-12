@@ -1,6 +1,6 @@
 pub mod generate_files;
 pub mod config;
-pub mod run_queries;
+// pub mod run_queries;
 pub mod test_case_exec;
 pub mod test_case_gen;
 pub mod runner;
@@ -10,6 +10,8 @@ pub mod eval;
 pub mod stream_schema;
 pub mod expr_gen;
 pub mod process_test_case;
+pub mod yaml_util;
+pub mod replay_exec;
 
 pub use config::LancerConfig;
 pub use generate_files::generate_files;

@@ -29,7 +29,7 @@ impl Default for LancerConfig {
             coordinator_exec_path: "../../nebulastream/build/nes-coordinator/nesCoordinator".into(),
             worker_exec_path: "../../nebulastream/build/nes-worker/nesWorker".into(),
             coordinator_config_path: None,
-            worker_config_path: None,
+            worker_config_path: Vec::new(),
             output_io: OutputIO::Null,
         };
 
@@ -38,9 +38,10 @@ impl Default for LancerConfig {
                 // QueryGenStrategy::Filter,
                 // QueryGenStrategy::Map,
                 QueryGenStrategy::AggregationMin,
+                QueryGenStrategy::AggregationAvg,
             ],
-            oracle_reps: 10,
-            test_case_count: 5,
+            oracle_reps: 5,
+            test_case_count: 4,
         };
 
         LancerConfig {
@@ -97,8 +98,7 @@ impl FilePathConfig {
     }
 
     pub fn worker_configs(&self, test_run_id: u32,) -> PathBuf {
-        // FIXME: this should not include worker-0
-        self.test_run(test_run_id).join(&self.worker_configs).join("worker-0.yml")
+        self.test_run(test_run_id).join(&self.worker_configs)
     }
 
     pub fn coordinator_config(&self, test_run_id: u32,) -> PathBuf {

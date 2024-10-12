@@ -11,6 +11,19 @@ impl RunnerStatus {
             .chain(self.worker_status.iter())
             .any(|state| *state != ProcessStatus::Running)
     }
+
+    /// returns the error strings in a vec
+    pub fn collect_errors(&self) -> Vec<String> {
+        std::iter::once(&self.coordinator_status)
+            .chain(self.worker_status.iter())
+            .filter_map(|state| match state {
+                ProcessStatus::Running => None,
+                ProcessStatus::Success => None,
+                ProcessStatus::Error(str) => Some(str),
+            })
+            .cloned()
+            .collect()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

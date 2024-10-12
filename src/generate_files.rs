@@ -13,37 +13,15 @@ use rand::thread_rng;
 
 pub fn generate_files(test_run_id: u32, config: &LancerConfig) {
     log::info!("Start generating files.");
-    // let logical_source = LogicalSource {
-    //     source_name: "test".to_string(),
-    //     fields: vec![
-    //         Field::typed("ts", NesType::i64()),
-    //         Field::typed("id", NesType::i64()),
-    //         Field::typed("value", NesType::i64()),
-    //     ],
-    // };
+    let source_bundles = get_n_random_source_bundles(5);
 
-    // let physical_source = PhysicalSource {
-    //     physical_source_name: "test-1".to_string(),
-    //     generator: RecordGenerator {
-    //         record_count: 100,
-    //         field_generators: vec![
-    //             FieldGenerator::new("ts", NesType::i64(), IncStrategy::new()),
-    //             FieldGenerator::new("id", NesType::i64(), RandomStrategy {}),
-    //             FieldGenerator::new("value", NesType::i64(), RandomStrategy {}),
-    //         ],
-    //     },
-    // };
-    let source_bundle = get_random_source_bundle("source");
-
-    let result = StreamGen::builder()
+    let builder = StreamGen::builder()
         .in_path(&config.path_config.test_run(test_run_id))
-        .add_source_bundle(source_bundle)
-        // .add_logical_source(logical_source)
-        // .with_physical_sources([physical_source])
         .coordinator_log_level(NesLogLevel::Debug)
         .worker_log_level(NesLogLevel::Debug)
-        .build()
-        .generate();
+        .add_source_bundles(source_bundles);
+    let result = builder.build().generate();
+
     if let Err(err) = result {
         log::error!("Error generating files: {}", err);
         return;
@@ -51,37 +29,71 @@ pub fn generate_files(test_run_id: u32, config: &LancerConfig) {
     log::info!("Generating files done.");
 }
 
-fn get_random_source_bundle(source_name: impl Into<String>) -> SourceBundle {
-    let field_count = 5;
+fn get_n_random_source_bundles(source_count: u32) -> Vec<SourceBundle> {
+    let mut source_bundles = Vec::new();
+    for id in 0..source_count {
+        let source_name = format!("source-{id}");
+        let field_count = 5;
+        let physical_source_count = 5;
+        let record_count = 500;
+        let source_bundle = get_random_source_bundle(
+            source_name,
+            field_count,
+            physical_source_count,
+            record_count,
+        );
+        source_bundles.push(source_bundle);
+    }
+    source_bundles
+}
+
+fn get_random_source_bundle(
+    source_name: impl Into<String>,
+    field_count: u32,
+    physical_source_count: u32,
+    record_count: u32,
+) -> SourceBundle {
     let mut fields = Vec::new();
-    let mut field_generators = Vec::new();
+    //list of list of field generators (lolofigen)
+    let mut lolofigen: Vec<Vec<FieldGenerator>> = Vec::new();
+
     fields.push(Field::typed("ts", NesType::i64()));
-    field_generators.push(FieldGenerator::new(
-        "ts",
-        NesType::i64(),
-        IncStrategy::new(),
-    ));
+    for _ in 0..physical_source_count {
+        let field_gens = vec![FieldGenerator::new(
+            "ts",
+            NesType::i64(),
+            IncStrategy::new(),
+        )];
+        lolofigen.push(field_gens);
+    }
 
     for id in 0..field_count {
         let name = format!("f{id}");
         let data_type = get_random_type();
         let field = Field::typed(&name, data_type);
         fields.push(field);
-        field_generators.push(FieldGenerator::new(name, data_type, RandomStrategy {}));
+        for field_gens in &mut lolofigen {
+            field_gens.push(FieldGenerator::new(&name, data_type, RandomStrategy {}));
+        }
     }
+
     let source_name = source_name.into();
     let logical_source = LogicalSource {
         source_name: source_name.clone(),
         fields,
     };
 
-    let physical_sources = vec![PhysicalSource {
-        physical_source_name: format!("{}-0", source_name),
-        generator: RecordGenerator {
-            field_generators,
-            record_count: 100,
-        },
-    }];
+    let mut physical_sources = vec![];
+    for (id, field_gens) in lolofigen.into_iter().enumerate() {
+        let physical_source = PhysicalSource {
+            physical_source_name: format!("{source_name}-{id}"),
+            generator: RecordGenerator {
+                field_generators: field_gens,
+                record_count: record_count.into(),
+            },
+        };
+        physical_sources.push(physical_source);
+    }
 
     SourceBundle {
         logical_source,
@@ -100,6 +112,8 @@ fn get_random_type() -> NesType {
         NesType::i32(),
         NesType::u64(),
         NesType::i64(),
+        NesType::f32(),
+        NesType::f64(),
     ];
     let mut rng = thread_rng();
     *types
