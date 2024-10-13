@@ -27,6 +27,7 @@ async fn main() {
     simple_logger::init_with_level(log::Level::Debug)
         .expect("Simple Logger should not fail to init!");
     let config = LancerConfig::default();
+    // let operation_mode = OperationMode::default();
     let operation_mode = OperationMode::Summary;
     // let operation_mode = OperationMode::ReplayExec(ReplayExec::test_set(0, 1));
     match operation_mode {
@@ -53,11 +54,10 @@ fn reset_base_dir(config: &LancerConfig) {
         log::info!("Deleting existing files in path: {:?}", path);
         fs::remove_dir_all(path).unwrap();
     }
+    fs::create_dir(path).unwrap();
 }
 
 fn create_base_dir(test_run_id: u32, config: &LancerConfig) {
-    let path = config.path_config.base();
-    fs::create_dir(path).unwrap();
     log::info!(
         "Creating test-run-{test_run_id} directory in {:?}",
         config.path_config.test_run(test_run_id)
