@@ -1,5 +1,7 @@
 use std::{
-    net::Ipv4Addr, path::{Path, PathBuf}, time::Duration
+    net::Ipv4Addr,
+    path::{Path, PathBuf},
+    time::Duration,
 };
 
 use crate::{
@@ -10,6 +12,7 @@ use crate::{
 
 pub struct TestConfig {
     pub oracles: Vec<QueryGenStrategy>,
+    pub test_run_count: u32,
     pub oracle_reps: u32,
     pub test_case_count: u32,
 }
@@ -20,7 +23,7 @@ pub struct LancerConfig {
     pub runner_config: RunnerConfig,
     pub skip_to_stage: Stages,
     pub test_config: TestConfig,
-    pub net_config:NetworkConfig,
+    pub net_config: NetworkConfig,
 }
 
 #[derive(Clone)]
@@ -52,13 +55,14 @@ impl Default for LancerConfig {
 
         let test_config = TestConfig {
             oracles: vec![
-                // QueryGenStrategy::Filter,
+                QueryGenStrategy::Filter,
                 // QueryGenStrategy::Map,
                 // QueryGenStrategy::AggregationMin,
-                QueryGenStrategy::AggregationAvg,
+                // QueryGenStrategy::AggregationAvg,
             ],
+            test_run_count: 1,
             oracle_reps: 1,
-            test_case_count: 4,
+            test_case_count: 50,
         };
 
         LancerConfig {
@@ -66,7 +70,7 @@ impl Default for LancerConfig {
             path_config: FilePathConfig::default(),
             test_case_timeout: Duration::from_secs(10),
             runner_config,
-            skip_to_stage: Stages::default(),
+            skip_to_stage: Stages::Evaluation,
             test_config,
             net_config: NetworkConfig::default(),
         }
@@ -115,12 +119,13 @@ impl FilePathConfig {
         self.test_run(test_run_id).join(&self.results)
     }
 
-    pub fn worker_configs(&self, test_run_id: u32,) -> PathBuf {
+    pub fn worker_configs(&self, test_run_id: u32) -> PathBuf {
         self.test_run(test_run_id).join(&self.worker_configs)
     }
 
-    pub fn coordinator_config(&self, test_run_id: u32,) -> PathBuf {
-        self.test_run(test_run_id).join(&self.coordinator_config_file)
+    pub fn coordinator_config(&self, test_run_id: u32) -> PathBuf {
+        self.test_run(test_run_id)
+            .join(&self.coordinator_config_file)
     }
 
     pub fn test_sets(&self, test_run_id: u32) -> PathBuf {

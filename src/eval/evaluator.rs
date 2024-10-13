@@ -63,8 +63,23 @@ fn are_records_equal(rec0: &StringRecord, rec1: &StringRecord) -> bool {
     true
 }
 
+/// compares two String records for ordering
+/// The algorithm compares the first elements of both Records. 
+/// If they are unequal we return the result. 
+/// If they are equal we look at the second element and compare them. 
+/// We repeat this process until one of the records runs out of elements. 
+/// If this is the case it is the lesser records
 pub fn comp_records(rec0: &StringRecord, rec1: &StringRecord) -> Ordering {
-    rec0.get(0).cmp(&rec1.get(0))
+    let len0 = rec0.len();
+    let len1 = rec1.len();
+    let min_len = len0.min(len1);
+    for i in 0..min_len {
+        match rec0.get(i).cmp(&rec1.get(i)) {
+            Ordering::Equal => continue,
+            non_equal => return non_equal,
+        }
+    }
+    len0.cmp(&len1)
 }
 
 pub fn are_files_reordered(path0: &Path, path1: &Path) -> Result<ResultRelation, Box<dyn Error>> {

@@ -36,40 +36,48 @@ async fn main() {
 }
 
 async fn default_operation(config: &LancerConfig) {
-    let override_files = true;
-    let test_run_count = 1;
+    if config.skip_to_stage <= Stages::StreamGen {
+        reset_base_dir(config);
+    } 
+    for id in 0..config.test_config.test_run_count {
+        log::info!("Starting test run {id}.");
+        test_run(id, &config).await;
+    }
+}
 
+fn reset_base_dir(config: &LancerConfig) {
+    let override_files = true;
     let path = config.path_config.base();
     if override_files && path.exists() {
         log::info!("Deleting existing files in path: {:?}", path);
         fs::remove_dir_all(path).unwrap();
     }
-    fs::create_dir(path).unwrap();
+}
 
-    for id in 0..test_run_count {
-        log::info!("Starting test run {id}.");
-        log::info!(
-            "Creating test-run-{id} directory in {:?}",
-            config.path_config.test_run(id)
-        );
-        if let Err(err) = fs::create_dir(config.path_config.test_run(id)) {
-            log::error!("{err}");
-            return;
-        }
-        log::info!(
-            "Creating result directory in {:?}",
-            config.path_config.result(id)
-        );
-        if let Err(err) = fs::create_dir(config.path_config.result(id)) {
-            log::error!("{err}");
-            return;
-        }
-        test_run(id, &config).await;
+fn create_base_dir(test_run_id: u32, config: &LancerConfig) {
+    let path = config.path_config.base();
+    fs::create_dir(path).unwrap();
+    log::info!(
+        "Creating test-run-{test_run_id} directory in {:?}",
+        config.path_config.test_run(test_run_id)
+    );
+    if let Err(err) = fs::create_dir(config.path_config.test_run(test_run_id)) {
+        log::error!("{err}");
+        return;
+    }
+    log::info!(
+        "Creating result directory in {:?}",
+        config.path_config.result(test_run_id)
+    );
+    if let Err(err) = fs::create_dir(config.path_config.result(test_run_id)) {
+        log::error!("{err}");
+        return;
     }
 }
 
 async fn test_run(id: u32, config: &LancerConfig) {
     if config.skip_to_stage <= Stages::StreamGen {
+        create_base_dir(id, config);
         generate_files(id, config);
     } else {
         log::info!("Skipping Stage StreamGen...");
