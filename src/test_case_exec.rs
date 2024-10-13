@@ -24,7 +24,6 @@ pub struct TestCaseExec {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TestCaseExecStatus {
-    Pending,
     Success,
     Failed(String),
     TimedOut,
@@ -57,7 +56,6 @@ impl Into<Yaml> for &TestCaseExecStatus {
         let mut map: Hash = Hash::new();
         let str = match self {
             TestCaseExecStatus::Skipped => "Skipped",
-            TestCaseExecStatus::Pending => "Pending",
             TestCaseExecStatus::Success => "Success",
             TestCaseExecStatus::Failed(_) => "Failed",
             TestCaseExecStatus::TimedOut => "TimedOut",
@@ -79,7 +77,6 @@ impl TryFrom<&Yaml> for TestCaseExecStatus {
         };
         match status.as_str() {
             "Skipped" => Ok(TestCaseExecStatus::Skipped),
-            "Pending" => Ok(TestCaseExecStatus::Pending),
             "Success" => Ok(TestCaseExecStatus::Success),
             "Failed" => {
                 let Yaml::String(ref reason) = value["reason"] else {
