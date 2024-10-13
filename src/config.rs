@@ -56,13 +56,13 @@ impl Default for LancerConfig {
         let test_config = TestConfig {
             oracles: vec![
                 QueryGenStrategy::Filter,
-                // QueryGenStrategy::Map,
-                // QueryGenStrategy::AggregationMin,
+                QueryGenStrategy::Map,
+                QueryGenStrategy::AggregationMin,
                 // QueryGenStrategy::AggregationAvg,
             ],
             test_run_count: 1,
-            oracle_reps: 1,
-            test_case_count: 50,
+            oracle_reps: 2,
+            test_case_count: 2,
         };
 
         LancerConfig {
@@ -70,7 +70,7 @@ impl Default for LancerConfig {
             path_config: FilePathConfig::default(),
             test_case_timeout: Duration::from_secs(10),
             runner_config,
-            skip_to_stage: Stages::Evaluation,
+            skip_to_stage: Stages::default(),
             test_config,
             net_config: NetworkConfig::default(),
         }

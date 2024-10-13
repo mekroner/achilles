@@ -21,6 +21,24 @@ impl Into<Yaml> for &ResultRelation {
     }
 }
 
+impl TryFrom<&Yaml> for ResultRelation {
+    type Error = String;
+
+    fn try_from(value: &Yaml) -> Result<Self, Self::Error> {
+        let Some(str) = value.as_str() else {
+            return Err("Failed to parse ResultRelation.".to_string());
+        };
+        match str {
+            "Equal" => Ok(ResultRelation::Equal),
+            "Reordered" => Ok(ResultRelation::Reordered),
+            "Diff" => Ok(ResultRelation::Diff),
+            err => Err(format!(
+                "Failed to parse ResultRelation: Unknown enum member {err}."
+            )),
+        }
+    }
+}
+
 pub fn compare_files(path0: &Path, path1: &Path) -> Result<ResultRelation, Box<dyn Error>> {
     if !is_row_count_equal(path0, path1)? {
         return Ok(ResultRelation::Diff);
@@ -64,10 +82,10 @@ fn are_records_equal(rec0: &StringRecord, rec1: &StringRecord) -> bool {
 }
 
 /// compares two String records for ordering
-/// The algorithm compares the first elements of both Records. 
-/// If they are unequal we return the result. 
-/// If they are equal we look at the second element and compare them. 
-/// We repeat this process until one of the records runs out of elements. 
+/// The algorithm compares the first elements of both Records.
+/// If they are unequal we return the result.
+/// If they are equal we look at the second element and compare them.
+/// We repeat this process until one of the records runs out of elements.
 /// If this is the case it is the lesser records
 pub fn comp_records(rec0: &StringRecord, rec1: &StringRecord) -> Ordering {
     let len0 = rec0.len();

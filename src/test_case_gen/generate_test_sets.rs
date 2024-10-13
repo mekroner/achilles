@@ -6,7 +6,7 @@ use crate::LancerConfig;
 use nes_rust_client::prelude::*;
 
 use super::{
-    oracle::QueryGen,
+    oracle::{QueryGen, QueryGenStrategy},
     test_case::{TestCase, TestSet},
 };
 
@@ -28,7 +28,7 @@ pub fn generate_test_sets(
             for rep_id in 0..reps {
                 let test_set_id = (oracle_id * reps + rep_id) as u32;
                 let query_gen = query_gen_factory.create_query_gen(&schema, strat);
-                let case = generate_test_case(test_run_id, test_set_id, config, &*query_gen);
+                let case = generate_test_case(test_run_id, test_set_id, config, &*query_gen, strat);
                 cases.push(case);
             }
             cases
@@ -44,6 +44,7 @@ fn generate_test_case(
     test_set_id: u32,
     config: &LancerConfig,
     query_gen: &dyn QueryGen,
+    strategy: QueryGenStrategy,
 ) -> TestSet {
     let origin_path = config
         .path_config
@@ -66,6 +67,7 @@ fn generate_test_case(
 
     TestSet {
         id: test_set_id,
+        strategy,
         origin,
         others,
     }

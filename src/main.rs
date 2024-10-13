@@ -8,9 +8,8 @@ use achilles::{
     replay_exec::{replay_exec, ReplayExec},
     stages::Stages,
     stream_schema::read_stream_schema_from_file,
-    test_case_exec::{
-        read_test_set_execs_from_file, write_test_set_execs_to_file, TestCaseExecStatus,
-    },
+    summery::summary_operation,
+    test_case_exec::{read_test_set_execs_from_file, write_test_set_execs_to_file},
     test_case_gen::test_case::{read_test_sets_to_file, write_test_sets_to_file},
     LancerConfig,
 };
@@ -35,49 +34,6 @@ async fn main() {
         OperationMode::ReplayExec(replay) => replay_exec(&replay, &config).await,
         OperationMode::Summary => summary_operation(&config),
     }
-}
-
-// support per oracle stats
-#[derive(Default)]
-struct SummaryStats {
-    total_count: u32,
-    success_count: u32,
-    fail_count: u32,
-    timeout_count: u32,
-    skipped_count: u32,
-}
-
-// FIXME: this should work for multiple test runs
-fn calculate_summery_stats(run_id: u32, config: &LancerConfig) -> SummaryStats {
-    let mut stats = SummaryStats::default();
-    let test_set_execs = read_test_set_execs_from_file(run_id, &config);
-    for test_case_execs in test_set_execs {
-        let iter = std::iter::once(&test_case_execs.origin).chain(test_case_execs.others.iter());
-        for exec in iter {
-            stats.total_count += 1;
-            match exec.status {
-                TestCaseExecStatus::Success => stats.success_count += 1,
-                TestCaseExecStatus::Failed(_) => stats.fail_count += 1,
-                TestCaseExecStatus::TimedOut => stats.timeout_count += 1,
-                TestCaseExecStatus::Skipped => stats.skipped_count += 1,
-            }
-        }
-    }
-
-    // test set evals
-
-    stats
-}
-
-fn summary_operation(config: &LancerConfig) {
-    log::info!("Starting Summary Mode.");
-    let run_id = 0;
-    let stats = calculate_summery_stats(run_id, config);
-    println!("---( run {}) ---", run_id);
-    println!("Successful Executed: {} of {} ({:.2})", stats.success_count, stats.total_count, stats.success_count as f32 / stats.total_count as f32 * 100.0);
-    println!("Skipped Executed: {} of {} ({:.2})", stats.skipped_count, stats.total_count, stats.skipped_count as f32 / stats.total_count as f32 * 100.0);
-    println!("Failed Executed: {} of {} ({:.2})", stats.fail_count, stats.total_count, stats.fail_count as f32 / stats.total_count as f32 * 100.0);
-    println!("Timeout Executed: {} of {} ({:.2})", stats.timeout_count, stats.total_count, stats.timeout_count as f32 / stats.total_count as f32 * 100.0);
 }
 
 async fn default_operation(config: &LancerConfig) {

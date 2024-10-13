@@ -3,7 +3,6 @@ use std::fs;
 use nes_rust_client::query::sink::Sink;
 
 use crate::{
-    config,
     eval::check_results::check_test_set,
     process_test_case::process_test_sets::{process_single_test_case, process_test_set},
     test_case_gen::{
@@ -113,6 +112,7 @@ async fn replay_exec_test_set(location: &TestSetLocation, config: &LancerConfig)
 
     let updated_test_set = TestSet {
         id: test_set.id,
+        strategy: test_set.strategy,
         origin,
         others,
     };

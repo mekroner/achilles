@@ -5,13 +5,14 @@ use std::io::Write;
 use yaml_rust2::{yaml::Hash, Yaml, YamlEmitter, YamlLoader};
 
 use crate::{
-    test_case_gen::{query_id::TestCaseId, test_case::TestCase},
+    test_case_gen::{oracle::QueryGenStrategy, query_id::TestCaseId, test_case::TestCase},
     LancerConfig,
 };
 
 #[derive(Debug, Clone)]
 pub struct TestSetExec {
     pub id: u32,
+    pub strategy: QueryGenStrategy,
     pub origin: TestCaseExec,
     pub others: Vec<TestCaseExec>,
 }
@@ -117,6 +118,7 @@ impl Into<Yaml> for &TestSetExec {
     fn into(self) -> Yaml {
         let mut map: Hash = Hash::new();
         map.insert(Yaml::String("id".into()), Yaml::Integer(self.id as i64));
+        map.insert(Yaml::String("strategy".into()), (&self.strategy).into());
         map.insert(Yaml::String("origin".into()), (&self.origin).into());
         let others: Vec<Yaml> = self.others.iter().map(|props| props.into()).collect();
         map.insert(Yaml::String("others".into()), Yaml::Array(others));
@@ -131,6 +133,7 @@ impl TryFrom<&Yaml> for TestSetExec {
         let Some(id) = value["id"].as_i64() else {
             return Err("Should be able to parse id field.".to_string());
         };
+        let strategy = (&value["strategy"]).try_into()?;
         let origin = (&value["origin"]).try_into()?;
         let Yaml::Array(arr) = &value["others"] else {
             return Err("Should be able to parse others field as Array".to_string());
@@ -141,6 +144,7 @@ impl TryFrom<&Yaml> for TestSetExec {
             .collect::<Result<Vec<_>, Self::Error>>()?;
         Ok(Self {
             id: id as u32,
+            strategy,
             origin,
             others,
         })

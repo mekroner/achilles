@@ -1,3 +1,5 @@
+use yaml_rust2::Yaml;
+
 use crate::stream_schema::StreamSchema;
 
 use super::aggregation_avg::AggregationAvgOracle;
@@ -6,7 +8,7 @@ use super::filter::FilterOracle;
 use super::map::MapOracle;
 use super::QueryGen;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Hash,Debug, Clone, Copy, PartialEq, Eq)]
 pub enum QueryGenStrategy {
     Filter,
     Map,
@@ -15,6 +17,42 @@ pub enum QueryGenStrategy {
     AggregationSum,
     AggregationCount,
     AggregationAvg,
+}
+
+impl Into<Yaml> for &QueryGenStrategy {
+    fn into(self) -> Yaml {
+        let str = match self {
+            QueryGenStrategy::Filter => "Filter",
+            QueryGenStrategy::Map => "Map",
+            QueryGenStrategy::AggregationMin => "AggregationMin",
+            QueryGenStrategy::AggregationMax => "AggregationMax",
+            QueryGenStrategy::AggregationSum => "AggregationSum",
+            QueryGenStrategy::AggregationCount => "AggregationCount",
+            QueryGenStrategy::AggregationAvg => "AggregationAvg",
+        };
+        Yaml::String(str.to_string())
+    }
+}
+
+impl TryFrom<&Yaml> for QueryGenStrategy {
+    type Error = String;
+
+    fn try_from(value: &Yaml) -> Result<Self, Self::Error> {
+        if let Yaml::String(s) = value {
+            match s.as_str() {
+                "Filter" => Ok(QueryGenStrategy::Filter),
+                "Map" => Ok(QueryGenStrategy::Map),
+                "AggregationMin" => Ok(QueryGenStrategy::AggregationMin),
+                "AggregationMax" => Ok(QueryGenStrategy::AggregationMax),
+                "AggregationSum" => Ok(QueryGenStrategy::AggregationSum),
+                "AggregationCount" => Ok(QueryGenStrategy::AggregationCount),
+                "AggregationAvg" => Ok(QueryGenStrategy::AggregationAvg),
+                _ => Err(format!("Unknown strategy: {}", s)),
+            }
+        } else {
+            Err("Expected a YAML string".to_string())
+        }
+    }
 }
 
 pub struct QueryGenFactory {}

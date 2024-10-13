@@ -133,6 +133,7 @@ pub async fn process_test_set(
     runner.stop_all();
     TestSetExec {
         id: test_set.id,
+        strategy: test_set.strategy,
         origin,
         others,
     }
