@@ -3,6 +3,8 @@ use yaml_rust2::Yaml;
 use crate::stream_schema::StreamSchema;
 
 use super::aggregation_avg::AggregationAvgOracle;
+use super::aggregation_count::AggregationCountOracle;
+use super::aggregation_max::AggregationMaxOracle;
 use super::aggregation_min::AggregationMinOracle;
 use super::filter::FilterOracle;
 use super::map::MapOracle;
@@ -71,9 +73,9 @@ impl QueryGenFactory {
             QueryGenStrategy::Filter => Box::new(FilterOracle::new(schema)),
             QueryGenStrategy::Map => Box::new(MapOracle::new(schema)),
             QueryGenStrategy::AggregationMin => Box::new(AggregationMinOracle::new(schema)),
-            QueryGenStrategy::AggregationMax => todo!(),
+            QueryGenStrategy::AggregationMax => Box::new(AggregationMaxOracle::new(schema)),
             QueryGenStrategy::AggregationSum => todo!(),
-            QueryGenStrategy::AggregationCount => todo!(),
+            QueryGenStrategy::AggregationCount => Box::new(AggregationCountOracle::new(schema)),
             QueryGenStrategy::AggregationAvg => Box::new(AggregationAvgOracle::new(schema)),
         }
     }

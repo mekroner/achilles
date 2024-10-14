@@ -93,14 +93,14 @@ pub fn get_random_field_name(source: &LogicalSource) -> String {
 }
 
 // TODO: Actually implement this function!!!
-pub fn generate_aggregation(source: &LogicalSource) -> Aggregation {
-    use rand::seq::IteratorRandom;
-    let mut rng = rand::thread_rng();
-    let field = source
-        .fields
-        .iter()
-        .filter(|field| field.name() != "ts")
-        .choose(&mut rng)
-        .expect("Expect to get random field.");
-    Aggregation::min(field.name())
-}
+// pub fn generate_aggregation(source: &LogicalSource) -> Aggregation {
+//     use rand::seq::IteratorRandom;
+//     let mut rng = rand::thread_rng();
+//     let field = source
+//         .fields
+//         .iter()
+//         .filter(|field| field.name() != "ts")
+//         .choose(&mut rng)
+//         .expect("Expect to get random field.");
+//     Aggregation::min(field.name())
+// }

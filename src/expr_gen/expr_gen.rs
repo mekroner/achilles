@@ -4,14 +4,18 @@ use nes_types::{FloatType, IntType, NesType};
 use rand::prelude::*;
 use strum::IntoEnumIterator;
 
-use nes_rust_client::expression::{
-    binary_expression::{BinaryExpr, BinaryOp},
-    expression::RawExpr,
-    literal::Literal,
-    Field, LogicalExpr,
+use nes_rust_client::{
+    expression::{
+        binary_expression::{BinaryExpr, BinaryOp, BinaryOpType},
+        expression::RawExpr,
+        literal::Literal,
+        Field, LogicalExpr,
+    },
+    prelude::{UnaryExpr, UnaryOp},
 };
 
-const EARLY_STOP: f64 = 0.25;
+const IS_EARLY_STOP: f64 = 0.25;
+const IS_FIELD: f64 = 0.50;
 
 pub struct GenerationError(String);
 
@@ -41,8 +45,8 @@ pub fn generate_raw_expr(
     output_type: NesType,
 ) -> Result<RawExpr, GenerationError> {
     let mut rng = rand::thread_rng();
-    if depth == 0 || rng.gen_bool(EARLY_STOP){
-        let is_field = rng.gen_bool(0.75);
+    if depth == 0 || rng.gen_bool(IS_EARLY_STOP) {
+        let is_field = rng.gen_bool(IS_FIELD);
         if is_field {
             let Some(field) = generate_field(fields, output_type) else {
                 let literal = generate_literal(output_type)?;
@@ -53,20 +57,49 @@ pub fn generate_raw_expr(
         let literal = generate_literal(output_type)?;
         return Ok(RawExpr::Literal(literal));
     }
-    let operator = BinaryOp::iter()
-        .filter(|&operator| binary_op_can_return(operator, output_type))
+    // binary operator
+    if rng.gen_bool(1.0) {
+        let operator = BinaryOp::iter()
+            .filter(|&operator| operator != BinaryOp::Remainder && operator != BinaryOp::Power)
+            .filter(|&operator| binary_op_can_return(operator, output_type))
+            .choose(&mut rng)
+            .expect("Failed to find binary operator");
+        // should only select types with existing fields
+        let input_type = binary_op_input_type(operator, fields, output_type)?;
+        let binary = BinaryExpr {
+            lhs: Box::new(generate_raw_expr(depth - 1, fields, input_type)?),
+            rhs: Box::new(generate_raw_expr(depth - 1, fields, input_type)?),
+            data_type: output_type,
+            operator,
+        };
+        let expr = RawExpr::Binary(binary);
+        return Ok(expr);
+    }
+    // unary operator
+    let operator = UnaryOp::iter()
+        .filter(|&operator| unary_op_can_return(operator, output_type))
         .choose(&mut rng)
-        .expect("Failed to find binary operator");
-    // should only select types with existing fields
-    let input_type = binary_op_input_type(operator, fields, output_type)?;
-    let binary = BinaryExpr {
-        lhs: Box::new(generate_raw_expr(depth - 1, fields, input_type)?),
-        rhs: Box::new(generate_raw_expr(depth - 1, fields, input_type)?),
+        .expect("Failed to find unary operator");
+    let input_type = output_type;
+    let unary = UnaryExpr {
+        expr: Box::new(generate_raw_expr(depth - 1, fields, input_type)?),
         data_type: output_type,
         operator,
     };
-    let expr = RawExpr::Binary(binary);
+    let expr = RawExpr::Unary(unary);
     Ok(expr)
+}
+
+fn unary_op_can_return(operator: UnaryOp, output_type: NesType) -> bool {
+    output_type == NesType::Undefined
+        || unary_op_accepted_output_types(operator).contains(&output_type)
+}
+
+fn unary_op_accepted_output_types(operator: UnaryOp) -> Vec<NesType> {
+    match operator{
+        UnaryOp::Negate => logical_types(),
+        UnaryOp::Absolute => arithmetic_types()
+    }
 }
 
 fn binary_op_can_return(operator: BinaryOp, output_type: NesType) -> bool {
@@ -100,7 +133,10 @@ fn generate_literal(data_type: NesType) -> Result<Literal, GenerationError> {
             "Cannot generate literal of type char.".into(),
         )),
         NesType::Int(t) => Ok(Literal::typed(generate_int(&mut rng, t), NesType::Int(t))),
-        NesType::Float(t) => Ok(Literal::typed(generate_float(&mut rng, t), NesType::Float(t))),
+        NesType::Float(t) => Ok(Literal::typed(
+            generate_float(&mut rng, t),
+            NesType::Float(t),
+        )),
     }
 }
 
@@ -124,58 +160,17 @@ fn generate_float(rng: &mut ThreadRng, data_type: FloatType) -> String {
     }
 }
 
-fn generate_binary_op(input_type: NesType, output_type: NesType) -> Option<BinaryOp> {
-    let mut rng = rand::thread_rng();
-    BinaryOp::iter()
-        .filter(|&operator| {
-            input_type == NesType::Undefined
-                || binary_op_accepted_input_types(operator).contains(&input_type)
-        })
-        .filter(|&operator| {
-            output_type == NesType::Undefined
-                || binary_op_output_type(operator, input_type) == output_type
-        })
-        .choose(&mut rng)
-}
-
 fn binary_op_accepted_input_types(operator: BinaryOp) -> Vec<NesType> {
-    match operator {
-        BinaryOp::And | BinaryOp::Or => logical_types(),
-        BinaryOp::Equals
-        | BinaryOp::Greater
-        | BinaryOp::GreaterEquals
-        | BinaryOp::Less
-        | BinaryOp::LessEquals
-        | BinaryOp::Add
-        | BinaryOp::Sub
-        | BinaryOp::Multiply
-        | BinaryOp::Divide => arithmetic_types(),
+    match operator.get_op_type() {
+        BinaryOpType::Logical => logical_types(),
+        BinaryOpType::Relational | BinaryOpType::Arithmetic => arithmetic_types(),
     }
 }
 
 fn binary_op_accepted_output_types(operator: BinaryOp) -> Vec<NesType> {
-    match operator {
-        BinaryOp::And
-        | BinaryOp::Or
-        | BinaryOp::Equals
-        | BinaryOp::Greater
-        | BinaryOp::GreaterEquals
-        | BinaryOp::Less
-        | BinaryOp::LessEquals => logical_types(),
-        BinaryOp::Add | BinaryOp::Sub | BinaryOp::Multiply | BinaryOp::Divide => arithmetic_types(),
-    }
-}
-
-fn binary_op_output_type(operator: BinaryOp, input_type: NesType) -> NesType {
-    match operator {
-        BinaryOp::And
-        | BinaryOp::Or
-        | BinaryOp::Equals
-        | BinaryOp::Greater
-        | BinaryOp::GreaterEquals
-        | BinaryOp::Less
-        | BinaryOp::LessEquals => NesType::Bool,
-        BinaryOp::Add | BinaryOp::Sub | BinaryOp::Multiply | BinaryOp::Divide => input_type,
+    match operator.get_op_type() {
+        BinaryOpType::Logical | BinaryOpType::Relational => logical_types(),
+        BinaryOpType::Arithmetic => arithmetic_types(),
     }
 }
 
@@ -185,13 +180,9 @@ fn binary_op_input_type(
     output_type: NesType,
 ) -> Result<NesType, GenerationError> {
     let mut rng = rand::thread_rng();
-    match operator {
-        BinaryOp::And | BinaryOp::Or => Ok(NesType::Bool),
-        BinaryOp::Equals
-        | BinaryOp::Greater
-        | BinaryOp::GreaterEquals
-        | BinaryOp::Less
-        | BinaryOp::LessEquals => match binary_op_accepted_input_types(operator)
+    match operator.get_op_type() {
+        BinaryOpType::Logical => Ok(NesType::Bool),
+        BinaryOpType::Relational => match binary_op_accepted_input_types(operator)
             .iter()
             .filter(|&input_type| {
                 fields
@@ -205,7 +196,7 @@ fn binary_op_input_type(
             Some(t) => Ok(*t),
             None => Err(GenerationError("Unable to find input type.".to_string())),
         },
-        BinaryOp::Add | BinaryOp::Sub | BinaryOp::Multiply | BinaryOp::Divide => Ok(output_type),
+        BinaryOpType::Arithmetic => Ok(output_type),
     }
 }
 

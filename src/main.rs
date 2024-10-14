@@ -10,7 +10,7 @@ use achilles::{
     stream_schema::read_stream_schema_from_file,
     summery::summary_operation,
     test_case_exec::{read_test_set_execs_from_file, write_test_set_execs_to_file},
-    test_case_gen::test_case::{read_test_sets_to_file, write_test_sets_to_file},
+    test_case_gen::{query_id::TestCaseId, test_case::{read_test_sets_to_file, write_test_sets_to_file}},
     LancerConfig,
 };
 
@@ -20,6 +20,7 @@ pub enum OperationMode {
     Default,
     ReplayExec(ReplayExec),
     Summary,
+    ExtractDiffs,
 }
 
 #[tokio::main]
@@ -27,13 +28,14 @@ async fn main() {
     simple_logger::init_with_level(log::Level::Debug)
         .expect("Simple Logger should not fail to init!");
     let config = LancerConfig::default();
-    // let operation_mode = OperationMode::default();
-    let operation_mode = OperationMode::Summary;
-    // let operation_mode = OperationMode::ReplayExec(ReplayExec::test_set(0, 1));
+    let operation_mode = OperationMode::default();
+    // let operation_mode = OperationMode::Summary;
+    // let operation_mode = OperationMode::ReplayExec(ReplayExec::test_case(0, 0, TestCaseId::Other(1)));
     match operation_mode {
         OperationMode::Default => default_operation(&config).await,
         OperationMode::ReplayExec(replay) => replay_exec(&replay, &config).await,
         OperationMode::Summary => summary_operation(&config),
+        OperationMode::ExtractDiffs => ()
     }
 }
 

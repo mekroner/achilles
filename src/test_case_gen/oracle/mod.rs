@@ -3,6 +3,9 @@ pub mod filter;
 pub mod query_gen_factory;
 pub mod map;
 pub mod aggregation_avg;
+pub mod aggregation_max;
+pub mod aggregation_sum;
+pub mod aggregation_count;
 
 pub use query_gen_factory::{QueryGenFactory, QueryGenStrategy};
 

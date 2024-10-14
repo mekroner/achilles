@@ -1,11 +1,14 @@
 use crate::{
-    test_case_gen::util::{
-        generate_aggregation, generate_predicate, generate_window_descriptor, random_source,
-    },
     stream_gen::LogicalSource,
     stream_schema::StreamSchema,
+    test_case_gen::util::{
+        generate_predicate, generate_window_descriptor, get_random_field_name, random_source,
+    },
 };
-use nes_rust_client::{prelude::*, query::time::{Duration, TimeCharacteristic, TimeUnit}};
+use nes_rust_client::{
+    prelude::*,
+    query::time::{Duration, TimeCharacteristic, TimeUnit},
+};
 
 use super::QueryGen;
 
@@ -15,19 +18,19 @@ pub struct AggregationMinOracle {
     // dynamic values
     source: LogicalSource,
     window_desc: WindowDescriptor,
-    aggregation: Aggregation,
+    agg_field_name: String,
 }
 
 impl QueryGen for AggregationMinOracle {
     fn new(schema: &StreamSchema) -> Self {
         let source = random_source(&schema);
         let window_desc = generate_window_descriptor();
-        let aggregation = generate_aggregation(&source);
+        let agg_field_name = get_random_field_name(&source);
         Self {
             predicate_depth: 3,
             source,
             window_desc,
-            aggregation,
+            agg_field_name,
         }
     }
 
@@ -35,7 +38,7 @@ impl QueryGen for AggregationMinOracle {
         let builder = QueryBuilder::from_source(&self.source.source_name);
         builder
             .window(self.window_desc.clone())
-            .apply([self.aggregation.clone()])
+            .apply([Aggregation::min(self.agg_field_name.clone())])
     }
 
     fn other(&self) -> QueryBuilder {
@@ -53,14 +56,14 @@ impl QueryGen for AggregationMinOracle {
             .clone()
             .filter(predicate.clone())
             .window(self.window_desc.clone())
-            .apply([self.aggregation.clone()]);
+            .apply([Aggregation::min(self.agg_field_name.clone())]);
         let query_not = builder
             .filter(predicate.not())
             .window(self.window_desc.clone())
-            .apply([self.aggregation.clone()]);
+            .apply([Aggregation::min(self.agg_field_name.clone())]);
         query
             .union(query_not)
             .window(union_window)
-            .apply([self.aggregation.clone()])
+            .apply([Aggregation::min(self.agg_field_name.clone())])
     }
 }

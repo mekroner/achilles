@@ -2,7 +2,7 @@ use crate::{
     stream_gen::LogicalSource,
     stream_schema::StreamSchema,
     test_case_gen::util::{
-        generate_aggregation, generate_predicate, generate_window_descriptor,
+        generate_predicate, generate_window_descriptor,
         get_random_field_name, random_source,
     },
 };

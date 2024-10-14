@@ -34,7 +34,7 @@ fn get_n_random_source_bundles(source_count: u32) -> Vec<SourceBundle> {
     let mut source_bundles = Vec::new();
     for id in 0..source_count {
         let source_name = format!("source-{id}");
-        let field_count = 5;
+        let field_count = 10;
         let physical_source_count = 5;
         let record_count = 500;
         let source_bundle = get_random_source_bundle(
