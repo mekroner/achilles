@@ -60,9 +60,9 @@ impl Default for LancerConfig {
                 // QueryGenStrategy::AggregationMin,
                 // QueryGenStrategy::AggregationAvg,
             ],
-            test_run_count: 5,
+            test_run_count: 1,
             oracle_reps: 1,
-            test_case_count: 1,
+            test_case_count: 10,
         };
 
         LancerConfig {

@@ -7,6 +7,7 @@ use nes_rust_client::query;
 use nes_rust_client::query::stringify::stringify_expr;
 use nes_rust_client::query::window::aggregation::Aggregation;
 use nes_rust_client::query::window::window_descriptor::WindowDescriptor;
+use nes_types::NesType;
 
 use crate::stream_gen::LogicalSource;
 use crate::stream_schema::StreamSchema;
@@ -24,12 +25,30 @@ fn has_literal_literal(logical_expr: &LogicalExpr) -> bool {
     false
 }
 
+fn contains_boolean_literal(logical_expr: &LogicalExpr) -> bool {
+    logical_expr.0.traverse_and_check(|expr| {
+        if let RawExpr::Literal(lit) = expr {
+            if lit.data_type() == NesType::bool() {
+                return true;
+            }
+        }
+        false
+    })
+}
+
+fn is_literal(logical_expr: &LogicalExpr) -> bool {
+    if let RawExpr::Literal(_) = logical_expr.0 {
+        return true;
+    }
+    false
+}
+
 pub fn generate_predicate(depth: u32, fields: &[Field]) -> LogicalExpr {
     loop {
         let Ok(p) = generate_logical_expr(depth, &fields) else {
             continue;
         };
-        if has_literal_literal(&p) {
+        if has_literal_literal(&p) || is_literal(&p) || contains_boolean_literal(&p) {
             log::debug!(
                 "Skipping predicate {} due to literal literal pattern.",
                 stringify_expr(&p.0)
@@ -61,7 +80,7 @@ pub fn generate_window_descriptor() -> WindowDescriptor {
 }
 
 /// returns a random field that is not the ts
-pub fn get_random_field_name(source: &LogicalSource) -> String{
+pub fn get_random_field_name(source: &LogicalSource) -> String {
     use rand::seq::IteratorRandom;
     let mut rng = rand::thread_rng();
     let field = source
