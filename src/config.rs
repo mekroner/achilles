@@ -61,15 +61,15 @@ impl Default for LancerConfig {
                 // QueryGenStrategy::AggMax,
                 // QueryGenStrategy::AggSum,
                 // QueryGenStrategy::AggCount,
-                // QueryGenStrategy::AggAvg,
+                QueryGenStrategy::AggAvg,
                 // QueryGenStrategy::KeyAggMin
                 // QueryGenStrategy::KeyAggMax
                 // QueryGenStrategy::KeyAggSum
-                QueryGenStrategy::KeyAggCount,
-                QueryGenStrategy::KeyAggAvg,
+                // QueryGenStrategy::KeyAggCount,
+                // QueryGenStrategy::KeyAggAvg,
             ],
             test_run_count: 1,
-            oracle_reps: 1,
+            oracle_reps: 3,
             test_case_count: 3,
         };
 

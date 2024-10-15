@@ -8,7 +8,7 @@ use crate::{
 };
 
 #[derive(Default, Clone)]
-pub struct SummaryStatsEntry {
+struct SummaryStatsEntry {
     // Exec
     total_count: u32,
     success_count: u32,
@@ -37,7 +37,7 @@ impl AddAssign for SummaryStatsEntry {
 }
 
 #[derive(Default)]
-pub struct SummaryStats {
+struct SummaryStats {
     stats: HashMap<QueryGenStrategy, SummaryStatsEntry>,
 }
 
@@ -69,7 +69,7 @@ impl fmt::Display for SummaryStats {
             "Reorder",
             "Diff"
         )?;
-        writeln!(f, "{}", "-".repeat(120))?;
+        writeln!(f, "{}", "-".repeat(111))?;
 
         let mut all_totals = SummaryStatsEntry::default();
 
@@ -133,7 +133,7 @@ pub fn summary_operation(config: &LancerConfig) {
     println!("{total_stats}");
 }
 
-pub fn calc_summery(run_id: u32, config: &LancerConfig) -> SummaryStats {
+fn calc_summery(run_id: u32, config: &LancerConfig) -> SummaryStats {
     let test_set_execs = read_test_set_execs_from_file(run_id, &config);
     let test_set_results = read_test_set_results_from_file(run_id, &config);
 

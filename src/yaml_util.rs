@@ -4,7 +4,7 @@ use yaml_rust2::{Yaml, YamlEmitter, YamlLoader};
 
 pub fn store_yaml_array<T>(path: &Path, values: &[T])
 where
-    for<'a> Yaml: From<&'a T>,
+    for<'a> &'a T: Into<Yaml>,
 {
     let yaml_test_cases: Vec<Yaml> = values.iter().map(|test_case| test_case.into()).collect();
     let yaml_arr = Yaml::Array(yaml_test_cases);

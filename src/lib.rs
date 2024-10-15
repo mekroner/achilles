@@ -13,6 +13,7 @@ pub mod process_test_case;
 pub mod yaml_util;
 pub mod replay_exec;
 pub mod summery;
+pub mod extract_diffs_operation;
 
 pub use config::LancerConfig;
 pub use generate_files::generate_files;
