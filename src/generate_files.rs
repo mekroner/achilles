@@ -1,5 +1,5 @@
 use crate::config::LancerConfig;
-use crate::stream_gen::data_generator::TimeStampStrategy;
+use crate::stream_gen::data_generator::{KeyStrategy, TimeStampStrategy};
 use crate::stream_gen::SourceBundle;
 use crate::stream_gen::{
     data_generator::{FieldGenerator, RandomStrategy, RecordGenerator},
@@ -60,12 +60,12 @@ fn get_random_source_bundle(
     let mut lolofigen: Vec<Vec<FieldGenerator>> = Vec::new();
 
     fields.push(Field::typed("ts", NesType::i64()));
+    fields.push(Field::typed("key", NesType::i64()));
     for _ in 0..physical_source_count {
-        let field_gens = vec![FieldGenerator::new(
-            "ts",
-            NesType::i64(),
-            TimeStampStrategy::new(100),
-        )];
+        let field_gens = vec![
+            FieldGenerator::new("ts", NesType::i64(), TimeStampStrategy::new(100)),
+            FieldGenerator::new("key", NesType::u64(), KeyStrategy::new(0..21)),
+        ];
         lolofigen.push(field_gens);
     }
 
@@ -75,7 +75,11 @@ fn get_random_source_bundle(
         let field = Field::typed(&name, data_type);
         fields.push(field);
         for field_gens in &mut lolofigen {
-            field_gens.push(FieldGenerator::new(&name, data_type, RandomStrategy::new(data_type)));
+            field_gens.push(FieldGenerator::new(
+                &name,
+                data_type,
+                RandomStrategy::new(data_type),
+            ));
         }
     }
 

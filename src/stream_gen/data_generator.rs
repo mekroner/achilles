@@ -144,3 +144,22 @@ impl FieldGeneratorStrategy for TimeStampStrategy {
         self.current_time.to_string()
     }
 }
+
+/// This strategy generates bursty time stamps
+pub struct KeyStrategy {
+    key_range: Range<u32>,
+    rng: ThreadRng,
+}
+
+impl KeyStrategy {
+    pub fn new(key_range: Range<u32>) -> Self {
+        let rng = thread_rng();
+        Self { key_range, rng }
+    }
+}
+
+impl FieldGeneratorStrategy for KeyStrategy {
+    fn generate_field(&mut self) -> String {
+        self.rng.gen_range(self.key_range.clone()).to_string()
+    }
+}

@@ -88,7 +88,7 @@ pub fn get_random_field_name(source: &LogicalSource) -> String {
     let field = source
         .fields
         .iter()
-        .filter(|field| field.name() != "ts")
+        .filter(|field| field.name() != "ts" || field.name() != "key")
         .choose(&mut rng)
         .expect("Expect to get random field.");
     field.name().to_string()

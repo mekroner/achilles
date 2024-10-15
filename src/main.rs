@@ -28,8 +28,8 @@ async fn main() {
     simple_logger::init_with_level(log::Level::Debug)
         .expect("Simple Logger should not fail to init!");
     let config = LancerConfig::default();
-    let operation_mode = OperationMode::default();
-    // let operation_mode = OperationMode::Summary;
+    // let operation_mode = OperationMode::default();
+    let operation_mode = OperationMode::Summary;
     // let operation_mode = OperationMode::ReplayExec(ReplayExec::test_case(0, 0, TestCaseId::Other(1)));
     match operation_mode {
         OperationMode::Default => default_operation(&config).await,

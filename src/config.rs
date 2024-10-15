@@ -57,11 +57,16 @@ impl Default for LancerConfig {
             oracles: vec![
                 // QueryGenStrategy::Filter,
                 // QueryGenStrategy::Map,
-                // QueryGenStrategy::AggregationMin,
-                // QueryGenStrategy::AggregationMax,
-                QueryGenStrategy::AggregationSum,
-                // QueryGenStrategy::AggregationCount,
-                // QueryGenStrategy::AggregationAvg,
+                // QueryGenStrategy::AggMin,
+                // QueryGenStrategy::AggMax,
+                // QueryGenStrategy::AggSum,
+                // QueryGenStrategy::AggCount,
+                // QueryGenStrategy::AggAvg,
+                // QueryGenStrategy::KeyAggMin
+                // QueryGenStrategy::KeyAggMax
+                // QueryGenStrategy::KeyAggSum
+                QueryGenStrategy::KeyAggCount,
+                QueryGenStrategy::KeyAggAvg,
             ],
             test_run_count: 1,
             oracle_reps: 1,
