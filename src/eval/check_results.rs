@@ -8,28 +8,23 @@ use yaml_rust2::{yaml::Hash, Yaml, YamlEmitter, YamlLoader};
 use crate::{
     test_case_exec::{TestCaseExecStatus, TestSetExec},
     test_case_gen::{oracle::QueryGenStrategy, query_id::TestCaseId},
+    yaml_util::store_yaml_array,
     LancerConfig,
 };
-
-pub struct TestCaseResult {
-    pub id: TestCaseId,
-    pub relation: ResultRelation,
-}
-
-impl Into<Yaml> for &TestCaseResult {
-    fn into(self) -> Yaml {
-        let mut map: Hash = Hash::new();
-        map.insert(Yaml::String("id".into()), (&self.id).into());
-        map.insert(Yaml::String("relation".into()), (&self.relation).into());
-        Yaml::Hash(map)
-    }
-}
 
 pub struct TestSetResult {
     pub id: u32,
     pub strategy: QueryGenStrategy,
     pub test_cases: Vec<TestCaseResult>,
 }
+
+pub struct TestCaseResult {
+    pub id: TestCaseId,
+    pub query_string: String,
+    pub relation: ResultRelation,
+}
+
+// yaml
 
 impl Into<Yaml> for &TestSetResult {
     fn into(self) -> Yaml {
@@ -39,16 +34,6 @@ impl Into<Yaml> for &TestSetResult {
         let queries = self.test_cases.iter().map(|q| q.into()).collect();
         map.insert(Yaml::String("test_cases".into()), Yaml::Array(queries));
         Yaml::Hash(map)
-    }
-}
-
-impl TryFrom<&Yaml> for TestCaseResult {
-    type Error = String;
-
-    fn try_from(value: &Yaml) -> Result<Self, Self::Error> {
-        let id = TestCaseId::try_from(&value["id"])?;
-        let relation = ResultRelation::try_from(&value["relation"])?;
-        Ok(Self { id, relation })
     }
 }
 
@@ -74,22 +59,44 @@ impl TryFrom<&Yaml> for TestSetResult {
         })
     }
 }
+
+impl Into<Yaml> for &TestCaseResult {
+    fn into(self) -> Yaml {
+        let mut map: Hash = Hash::new();
+        map.insert(Yaml::String("id".into()), (&self.id).into());
+        map.insert(Yaml::String("relation".into()), (&self.relation).into());
+        map.insert(
+            Yaml::String("query".into()),
+            Yaml::String(self.query_string.clone()),
+        );
+        Yaml::Hash(map)
+    }
+}
+
+impl TryFrom<&Yaml> for TestCaseResult {
+    type Error = String;
+
+    fn try_from(value: &Yaml) -> Result<Self, Self::Error> {
+        let id = TestCaseId::try_from(&value["id"])?;
+        let relation = ResultRelation::try_from(&value["relation"])?;
+        let Yaml::String(query_string) = &value["query"] else {
+            return Err("Unable to parse TestCaseResult: cannot read query.".into());
+        };
+        Ok(Self {
+            id,
+            relation,
+            query_string: query_string.to_string(),
+        })
+    }
+}
+
 pub fn write_test_set_results_to_file(
     test_run_id: u32,
     config: &LancerConfig,
     test_set_results: &[TestSetResult],
 ) {
     let path = config.path_config.test_set_results(test_run_id);
-    let yaml_test_sets: Vec<Yaml> = test_set_results
-        .iter()
-        .map(|test_set| test_set.into())
-        .collect();
-    let yaml_arr = Yaml::Array(yaml_test_sets);
-    let mut out_str = String::new();
-    let mut emitter = YamlEmitter::new(&mut out_str);
-    emitter.dump(&yaml_arr).unwrap();
-    let mut file = fs::File::create(path).expect("coordinator.yml has to be created!");
-    write!(file, "{out_str}").unwrap();
+    store_yaml_array(&path, test_set_results);
 }
 
 pub fn read_test_set_results_from_file(
@@ -160,6 +167,7 @@ pub fn check_test_set(test_set: &TestSetExec) -> Vec<TestCaseResult> {
         let test_case_result = TestCaseResult {
             id: test_case.id(),
             relation,
+            query_string: stringify_query(&test_case.query.query),
         };
         test_case_results.push(test_case_result);
     }

@@ -70,7 +70,7 @@ impl Default for LancerConfig {
             ],
             test_run_count: 1,
             oracle_reps: 3,
-            test_case_count: 3,
+            test_case_count: 2,
         };
 
         LancerConfig {
