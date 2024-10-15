@@ -1,7 +1,8 @@
 use crate::config::LancerConfig;
+use crate::stream_gen::data_generator::TimeStampStrategy;
 use crate::stream_gen::SourceBundle;
 use crate::stream_gen::{
-    data_generator::{FieldGenerator, IncStrategy, RandomStrategy, RecordGenerator},
+    data_generator::{FieldGenerator, RandomStrategy, RecordGenerator},
     physical_source::PhysicalSource,
     stream_gen::{NesLogLevel, StreamGen},
     LogicalSource,
@@ -63,7 +64,7 @@ fn get_random_source_bundle(
         let field_gens = vec![FieldGenerator::new(
             "ts",
             NesType::i64(),
-            IncStrategy::new(),
+            TimeStampStrategy::new(100),
         )];
         lolofigen.push(field_gens);
     }
@@ -74,7 +75,7 @@ fn get_random_source_bundle(
         let field = Field::typed(&name, data_type);
         fields.push(field);
         for field_gens in &mut lolofigen {
-            field_gens.push(FieldGenerator::new(&name, data_type, RandomStrategy {}));
+            field_gens.push(FieldGenerator::new(&name, data_type, RandomStrategy::new(data_type)));
         }
     }
 

@@ -6,6 +6,7 @@ use super::aggregation_avg::AggregationAvgOracle;
 use super::aggregation_count::AggregationCountOracle;
 use super::aggregation_max::AggregationMaxOracle;
 use super::aggregation_min::AggregationMinOracle;
+use super::aggregation_sum::AggregationSumOracle;
 use super::filter::FilterOracle;
 use super::map::MapOracle;
 use super::QueryGen;
@@ -74,7 +75,7 @@ impl QueryGenFactory {
             QueryGenStrategy::Map => Box::new(MapOracle::new(schema)),
             QueryGenStrategy::AggregationMin => Box::new(AggregationMinOracle::new(schema)),
             QueryGenStrategy::AggregationMax => Box::new(AggregationMaxOracle::new(schema)),
-            QueryGenStrategy::AggregationSum => todo!(),
+            QueryGenStrategy::AggregationSum => Box::new(AggregationSumOracle::new(schema)),
             QueryGenStrategy::AggregationCount => Box::new(AggregationCountOracle::new(schema)),
             QueryGenStrategy::AggregationAvg => Box::new(AggregationAvgOracle::new(schema)),
         }

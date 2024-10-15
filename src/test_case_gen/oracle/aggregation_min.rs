@@ -5,10 +5,7 @@ use crate::{
         generate_predicate, generate_window_descriptor, get_random_field_name, random_source,
     },
 };
-use nes_rust_client::{
-    prelude::*,
-    query::time::{Duration, TimeCharacteristic, TimeUnit},
-};
+use nes_rust_client::prelude::*;
 
 use super::QueryGen;
 
@@ -44,13 +41,6 @@ impl QueryGen for AggregationMinOracle {
     fn other(&self) -> QueryBuilder {
         let predicate = generate_predicate(self.predicate_depth, &self.source.fields);
         let builder = QueryBuilder::from_source(&self.source.source_name);
-        let union_window = WindowDescriptor::TumblingWindow {
-            duration: Duration::from_minutes(5),
-            time_character: TimeCharacteristic::EventTime {
-                field_name: "start".to_string(),
-                unit: TimeUnit::Milliseconds,
-            },
-        };
 
         let query = builder
             .clone()
@@ -63,7 +53,12 @@ impl QueryGen for AggregationMinOracle {
             .apply([Aggregation::min(self.agg_field_name.clone())]);
         query
             .union(query_not)
-            .window(union_window)
+            .project([
+                Field::from("start").rename("ts"),
+                Field::from("end"),
+                Field::from(self.agg_field_name.clone()),
+            ])
+            .window(self.window_desc.clone())
             .apply([Aggregation::min(self.agg_field_name.clone())])
     }
 }

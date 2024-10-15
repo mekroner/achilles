@@ -5,9 +5,9 @@ use nes_rust_client::expression::Field;
 use nes_rust_client::expression::LogicalExpr;
 use nes_rust_client::query;
 use nes_rust_client::query::stringify::stringify_expr;
-use nes_rust_client::query::window::aggregation::Aggregation;
 use nes_rust_client::query::window::window_descriptor::WindowDescriptor;
 use nes_types::NesType;
+use rand::Rng;
 
 use crate::stream_gen::LogicalSource;
 use crate::stream_schema::StreamSchema;
@@ -70,11 +70,13 @@ pub fn random_source(schema: &StreamSchema) -> LogicalSource {
 
 // TODO: Actually implement this function!!!
 pub fn generate_window_descriptor() -> WindowDescriptor {
+    let mut rng = rand::thread_rng();
+    let dur = rng.gen_range(200..10_000);
     WindowDescriptor::TumblingWindow {
-        duration: query::time::Duration::from_minutes(5),
+        duration: query::time::Duration::from_milliseconds(dur),
         time_character: query::time::TimeCharacteristic::EventTime {
             field_name: "ts".to_string(),
-            unit: query::time::TimeUnit::Minutes,
+            unit: query::time::TimeUnit::Milliseconds,
         },
     }
 }

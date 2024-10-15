@@ -51,13 +51,6 @@ impl QueryGen for AggregationAvgOracle {
         let builder = QueryBuilder::from_source(&self.source.source_name);
         let sum_agg = Aggregation::sum(self.agg_field_name.clone()).as_field("sum");
         let count_agg = Aggregation::count().as_field("count");
-        let union_window = WindowDescriptor::TumblingWindow {
-            duration: Duration::from_minutes(5),
-            time_character: TimeCharacteristic::EventTime {
-                field_name: "start".to_string(),
-                unit: TimeUnit::Milliseconds,
-            },
-        };
         let union_expr = ExprBuilder::field("sum").div(ExprBuilder::field("count")).build_arith().unwrap();
 
         let query = builder
@@ -71,7 +64,13 @@ impl QueryGen for AggregationAvgOracle {
             .apply([sum_agg.clone(), count_agg.clone()]);
         query
             .union(query_not)
-            .window(union_window)
+            .project([
+                Field::from("start").rename("ts"),
+                Field::from("end"),
+                Field::from("sum"),
+                Field::from("count"),
+            ])
+            .window(self.window_desc.clone())
             .apply([Aggregation::sum("sum"), Aggregation::sum("count")])
             .map( self.agg_field_name.clone(), union_expr)
             .project([

@@ -41,13 +41,6 @@ impl QueryGen for AggregationCountOracle {
     fn other(&self) -> QueryBuilder {
         let predicate = generate_predicate(self.predicate_depth, &self.source.fields);
         let builder = QueryBuilder::from_source(&self.source.source_name);
-        let union_window = WindowDescriptor::TumblingWindow {
-            duration: Duration::from_minutes(5),
-            time_character: TimeCharacteristic::EventTime {
-                field_name: "start".to_string(),
-                unit: TimeUnit::Milliseconds,
-            },
-        };
 
         let query = builder
             .clone()
@@ -60,7 +53,12 @@ impl QueryGen for AggregationCountOracle {
             .apply([Aggregation::count()]);
         query
             .union(query_not)
-            .window(union_window)
+            .project([
+                Field::from("start").rename("ts"),
+                Field::from("end"),
+                Field::from("count"),
+            ])
+            .window(self.window_desc.clone())
             .apply([Aggregation::sum("count")])
     }
 }
