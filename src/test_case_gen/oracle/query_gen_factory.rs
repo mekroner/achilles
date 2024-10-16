@@ -14,7 +14,11 @@ use super::key_aggregation_max::KeyAggregationMaxQueryGen;
 use super::key_aggregation_min::KeyAggregationMinQueryGen;
 use super::key_aggregation_sum::KeyAggregationSumQueryGen;
 use super::map::MapQueryGen;
+use super::window_part_avg::WindowPartAverageQueryGen;
+use super::window_part_count::WindowPartCountQueryGen;
+use super::window_part_max::WindowPartMaxQueryGen;
 use super::window_part_min::WindowPartMinQueryGen;
+use super::window_part_sum::WindowPartSumQueryGen;
 use super::QueryGen;
 
 #[derive(Hash, Debug, Clone, Copy, PartialEq, Eq)]
@@ -32,6 +36,10 @@ pub enum QueryGenStrategy {
     KeyAggCount,
     KeyAggAvg,
     WinPartMin,
+    WinPartMax,
+    WinPartSum,
+    WinPartCount,
+    WinPartAvg,
 }
 
 impl Into<Yaml> for &QueryGenStrategy {
@@ -50,6 +58,10 @@ impl Into<Yaml> for &QueryGenStrategy {
             QueryGenStrategy::KeyAggCount => "KeyAggCount",
             QueryGenStrategy::KeyAggAvg => "KeyAggAvg",
             QueryGenStrategy::WinPartMin => "WinPartMin",
+            QueryGenStrategy::WinPartMax => "WinPartMax",
+            QueryGenStrategy::WinPartSum => "WinPartSum",
+            QueryGenStrategy::WinPartCount => "WinPartCount",
+            QueryGenStrategy::WinPartAvg => "WinPartAvg",
         };
         Yaml::String(str.to_string())
     }
@@ -74,6 +86,10 @@ impl TryFrom<&Yaml> for QueryGenStrategy {
                 "KeyAggCount" => Ok(QueryGenStrategy::KeyAggCount),
                 "KeyAggAvg" => Ok(QueryGenStrategy::KeyAggAvg),
                 "WinPartMin" => Ok(QueryGenStrategy::WinPartMin),
+                "WinPartMax" => Ok(QueryGenStrategy::WinPartMax),
+                "WinPartSum" => Ok(QueryGenStrategy::WinPartSum),
+                "WinPartCount" => Ok(QueryGenStrategy::WinPartCount),
+                "WinPartAvg" => Ok(QueryGenStrategy::WinPartAvg),
                 _ => Err(format!("Unknown strategy: {}", s)),
             }
         } else {
@@ -108,6 +124,10 @@ impl QueryGenFactory {
             QueryGenStrategy::KeyAggCount => Box::new(KeyAggregationCountQueryGen::new(schema)),
             QueryGenStrategy::KeyAggAvg => Box::new(KeyAggregationAvgQueryGen::new(schema)),
             QueryGenStrategy::WinPartMin => Box::new(WindowPartMinQueryGen::new(schema)),
+            QueryGenStrategy::WinPartMax => Box::new(WindowPartMaxQueryGen::new(schema)),
+            QueryGenStrategy::WinPartSum => Box::new(WindowPartSumQueryGen::new(schema)),
+            QueryGenStrategy::WinPartCount => Box::new(WindowPartCountQueryGen::new(schema)),
+            QueryGenStrategy::WinPartAvg => Box::new(WindowPartAverageQueryGen::new(schema)),
         }
     }
 }

@@ -68,10 +68,14 @@ impl Default for LancerConfig {
                 // QueryGenStrategy::KeyAggCount,
                 // QueryGenStrategy::KeyAggAvg,
                 QueryGenStrategy::WinPartMin,
+                QueryGenStrategy::WinPartMax,
+                QueryGenStrategy::WinPartSum,
+                QueryGenStrategy::WinPartCount,
+                QueryGenStrategy::WinPartAvg,
             ],
             test_run_count: 1,
-            oracle_reps: 3,
-            test_case_count: 2,
+            oracle_reps: 1,
+            test_case_count: 1,
         };
 
         LancerConfig {

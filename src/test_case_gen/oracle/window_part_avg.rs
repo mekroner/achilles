@@ -9,7 +9,7 @@ use nes_rust_client::prelude::*;
 
 use super::QueryGen;
 
-pub struct WindowPartMinQueryGen {
+pub struct WindowPartAverageQueryGen {
     // static values
     // dynamic values
     source: LogicalSource,
@@ -17,7 +17,7 @@ pub struct WindowPartMinQueryGen {
     agg_field_name: String,
 }
 
-impl QueryGen for WindowPartMinQueryGen {
+impl QueryGen for WindowPartAverageQueryGen {
     fn new(schema: &StreamSchema) -> Self {
         let source = random_source(&schema);
         let outer_window = generate_outer_window();
@@ -33,20 +33,31 @@ impl QueryGen for WindowPartMinQueryGen {
         let builder = QueryBuilder::from_source(&self.source.source_name);
         builder
             .window(self.outer_window.clone())
-            .apply([Aggregation::min(self.agg_field_name.clone())])
+            .apply([Aggregation::average(self.agg_field_name.clone())])
     }
 
     fn other(&self) -> QueryBuilder {
         let inner_window = generate_inner_window(&self.outer_window);
+        let union_expr = ExprBuilder::field("sum")
+            .div(ExprBuilder::field("count"))
+            .build_arith()
+            .unwrap();
         QueryBuilder::from_source(&self.source.source_name)
             .window(inner_window.clone())
-            .apply([Aggregation::min(self.agg_field_name.clone())])
+            .apply([Aggregation::sum(self.agg_field_name.clone()).as_field("sum"), Aggregation::count()])
             .project([
                 Field::from("start").rename("ts"),
                 Field::from("end"),
-                Field::from(self.agg_field_name.clone()),
+                Field::from("sum"),
+                Field::from("count"),
             ])
             .window(self.outer_window.clone())
-            .apply([Aggregation::min(self.agg_field_name.clone())])
+            .apply([Aggregation::sum("sum"), Aggregation::sum("count")])
+            .map(self.agg_field_name.clone(), union_expr)
+            .project([
+                Field::untyped("start"),
+                Field::untyped("end"),
+                Field::untyped(self.agg_field_name.clone()),
+            ])
     }
 }

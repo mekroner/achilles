@@ -6,13 +6,18 @@ pub mod aggregation_max;
 pub mod aggregation_sum;
 pub mod aggregation_count;
 pub mod aggregation_avg;
-pub mod window_part_min;
 
 pub mod key_aggregation_max;
 pub mod key_aggregation_min;
 pub mod key_aggregation_sum;
 pub mod key_aggregation_count;
 pub mod key_aggregation_avg;
+
+pub mod window_part_min;
+pub mod window_part_max;
+pub mod window_part_sum;
+pub mod window_part_count;
+pub mod window_part_avg;
 
 pub use query_gen_factory::{QueryGenFactory, QueryGenStrategy};
 
