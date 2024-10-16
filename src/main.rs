@@ -1,10 +1,21 @@
 use std::fs;
 
 use achilles::{
-    check_test_sets, eval::check_results::write_test_set_results_to_file, extract_diffs_operation::extract_diffs_operatoion, generate_files, generate_test_sets, process_test_case::process_test_sets::process_test_sets, replay_exec::{replay_exec, ReplayExec}, stages::Stages, stream_schema::read_stream_schema_from_file, summery::summary_operation, test_case_exec::{read_test_set_execs_from_file, write_test_set_execs_to_file}, test_case_gen::{
+    check_test_sets,
+    eval::check_results::write_test_set_results_to_file,
+    extract_diffs_operation::extract_diffs_operatoion,
+    generate_files, generate_test_sets,
+    process_test_case::process_test_sets::process_test_sets,
+    replay_exec::{replay_exec, ReplayExec, TestSetLocation},
+    stages::Stages,
+    stream_schema::read_stream_schema_from_file,
+    summery::summary_operation,
+    test_case_exec::{read_test_set_execs_from_file, write_test_set_execs_to_file},
+    test_case_gen::{
         query_id::TestCaseId,
         test_case::{read_test_sets_to_file, write_test_sets_to_file},
-    }, LancerConfig
+    },
+    LancerConfig,
 };
 
 #[derive(Default, Clone)]
@@ -23,7 +34,7 @@ async fn main() {
     let config = LancerConfig::default();
     let operation_mode = OperationMode::default();
     // let operation_mode = OperationMode::Summary;
-    // let operation_mode = OperationMode::ReplayExec(ReplayExec::test_case(0, 0, TestCaseId::Other(1)));
+    // let operation_mode = OperationMode::ReplayExec(ReplayExec::test_set(0, 2));
     // let operation_mode = OperationMode::ExtractDiffs;
     match operation_mode {
         OperationMode::Default => default_operation(&config).await,

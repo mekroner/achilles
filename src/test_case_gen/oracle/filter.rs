@@ -6,7 +6,7 @@ use crate::{
 
 use super::QueryGen;
 
-pub struct FilterOracle {
+pub struct FilterQueryGen {
     // static values
     predicate_depth: u32,
     // dynamic values
@@ -14,7 +14,7 @@ pub struct FilterOracle {
 }
 
 
-impl QueryGen for FilterOracle {
+impl QueryGen for FilterQueryGen {
     fn new(schema: &StreamSchema) -> Self {
         let source = random_source(&schema);
         Self {

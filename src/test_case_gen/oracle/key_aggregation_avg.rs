@@ -9,7 +9,7 @@ use nes_rust_client::prelude::*;
 
 use super::QueryGen;
 
-pub struct KeyAggregationAvgOracle {
+pub struct KeyAggregationAvgQueryGen {
     // static values
     predicate_depth: u32,
     // dynamic values
@@ -18,7 +18,7 @@ pub struct KeyAggregationAvgOracle {
     agg_field_name: String,
 }
 
-impl QueryGen for KeyAggregationAvgOracle {
+impl QueryGen for KeyAggregationAvgQueryGen {
     fn new(schema: &StreamSchema) -> Self {
         let source = random_source(&schema);
         let window_desc = generate_window_descriptor();

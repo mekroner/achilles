@@ -6,6 +6,7 @@ pub mod aggregation_max;
 pub mod aggregation_sum;
 pub mod aggregation_count;
 pub mod aggregation_avg;
+pub mod window_part_min;
 
 pub mod key_aggregation_max;
 pub mod key_aggregation_min;

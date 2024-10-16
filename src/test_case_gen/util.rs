@@ -5,8 +5,10 @@ use nes_rust_client::expression::Field;
 use nes_rust_client::expression::LogicalExpr;
 use nes_rust_client::query;
 use nes_rust_client::query::stringify::stringify_expr;
+use nes_rust_client::query::time::Duration;
 use nes_rust_client::query::window::window_descriptor::WindowDescriptor;
 use nes_types::NesType;
+use rand::seq::SliceRandom;
 use rand::Rng;
 
 use crate::stream_gen::LogicalSource;
@@ -71,9 +73,49 @@ pub fn random_source(schema: &StreamSchema) -> LogicalSource {
 // TODO: Actually implement this function!!!
 pub fn generate_window_descriptor() -> WindowDescriptor {
     let mut rng = rand::thread_rng();
-    let dur = rng.gen_range(200..10_000);
+    let dur = rng.gen_range(200..20_000);
     WindowDescriptor::TumblingWindow {
         duration: query::time::Duration::from_milliseconds(dur),
+        time_character: query::time::TimeCharacteristic::EventTime {
+            field_name: "ts".to_string(),
+            unit: query::time::TimeUnit::Milliseconds,
+        },
+    }
+}
+
+fn get_window_dur(window: &WindowDescriptor) -> Option<u32> {
+    match window {
+        WindowDescriptor::TumblingWindow {
+            duration: Duration { amount, .. },
+            ..
+        } => Some(*amount),
+    }
+}
+
+const BASE_DUR: u32 = 2 * 3 * 4 * 5;
+
+pub fn generate_outer_window() -> WindowDescriptor {
+    let mut rng = rand::thread_rng();
+    let outer_dur = rng.gen_range(20..=200) * BASE_DUR;
+    WindowDescriptor::TumblingWindow {
+        duration: query::time::Duration::from_milliseconds(outer_dur),
+        time_character: query::time::TimeCharacteristic::EventTime {
+            field_name: "ts".to_string(),
+            unit: query::time::TimeUnit::Milliseconds,
+        },
+    }
+}
+
+pub fn generate_inner_window(outer_window: &WindowDescriptor) -> WindowDescriptor {
+    let mut rng = rand::thread_rng();
+    let outer_dur = get_window_dur(outer_window).expect("Window must have a duration");
+    let divisor = [1, 2, 3, 4, 5]
+        .choose(&mut rng)
+        .copied()
+        .expect("Must find Divisor");
+    let inner_dur = outer_dur / divisor;
+    WindowDescriptor::TumblingWindow {
+        duration: query::time::Duration::from_milliseconds(inner_dur),
         time_character: query::time::TimeCharacteristic::EventTime {
             field_name: "ts".to_string(),
             unit: query::time::TimeUnit::Milliseconds,
@@ -88,7 +130,7 @@ pub fn get_random_field_name(source: &LogicalSource) -> String {
     let field = source
         .fields
         .iter()
-        .filter(|field| field.name() != "ts" || field.name() != "key")
+        .filter(|field| field.name() != "ts" && field.name() != "key")
         .choose(&mut rng)
         .expect("Expect to get random field.");
     field.name().to_string()

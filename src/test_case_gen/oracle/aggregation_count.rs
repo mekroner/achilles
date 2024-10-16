@@ -12,7 +12,7 @@ use nes_rust_client::{
 
 use super::QueryGen;
 
-pub struct AggregationCountOracle {
+pub struct AggregationCountQueryGen {
     // static values
     predicate_depth: u32,
     // dynamic values
@@ -20,7 +20,7 @@ pub struct AggregationCountOracle {
     window_desc: WindowDescriptor,
 }
 
-impl QueryGen for AggregationCountOracle {
+impl QueryGen for AggregationCountQueryGen {
     fn new(schema: &StreamSchema) -> Self {
         let source = random_source(&schema);
         let window_desc = generate_window_descriptor();

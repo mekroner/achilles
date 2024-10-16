@@ -9,7 +9,7 @@ use nes_rust_client::prelude::*;
 
 use super::QueryGen;
 
-pub struct AggregationSumOracle {
+pub struct AggregationSumQueryGen {
     // static values
     predicate_depth: u32,
     // dynamic values
@@ -18,7 +18,7 @@ pub struct AggregationSumOracle {
     agg_field_name: String,
 }
 
-impl QueryGen for AggregationSumOracle {
+impl QueryGen for AggregationSumQueryGen {
     fn new(schema: &StreamSchema) -> Self {
         let source = random_source(&schema);
         let window_desc = generate_window_descriptor();

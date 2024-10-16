@@ -11,7 +11,7 @@ use nes_rust_client::{
 
 use super::QueryGen;
 
-pub struct MapOracle {
+pub struct MapQueryGen {
     // static values
     predicate_depth: u32,
     // dynamic values
@@ -29,7 +29,7 @@ fn generate_arithmetic_expr(fields: &[Field]) -> ArithmeticExpr {
     })
 }
 
-impl QueryGen for MapOracle {
+impl QueryGen for MapQueryGen {
     fn new(schema: &StreamSchema) -> Self {
         let source = random_source(schema);
         let expr = generate_arithmetic_expr(&source.fields);

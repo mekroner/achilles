@@ -2,18 +2,19 @@ use yaml_rust2::Yaml;
 
 use crate::stream_schema::StreamSchema;
 
-use super::aggregation_avg::AggregationAvgOracle;
-use super::aggregation_count::AggregationCountOracle;
-use super::aggregation_max::AggregationMaxOracle;
-use super::aggregation_min::AggregationMinOracle;
-use super::aggregation_sum::AggregationSumOracle;
-use super::filter::FilterOracle;
-use super::key_aggregation_avg::KeyAggregationAvgOracle;
-use super::key_aggregation_count::KeyAggregationCountOracle;
-use super::key_aggregation_max::KeyAggregationMaxOracle;
-use super::key_aggregation_min::KeyAggregationMinOracle;
-use super::key_aggregation_sum::KeyAggregationSumOracle;
-use super::map::MapOracle;
+use super::aggregation_avg::AggregationAvgQueryGen;
+use super::aggregation_count::AggregationCountQueryGen;
+use super::aggregation_max::AggregationMaxQueryGen;
+use super::aggregation_min::AggregationMinQueryGen;
+use super::aggregation_sum::AggregationSumQueryGen;
+use super::filter::FilterQueryGen;
+use super::key_aggregation_avg::KeyAggregationAvgQueryGen;
+use super::key_aggregation_count::KeyAggregationCountQueryGen;
+use super::key_aggregation_max::KeyAggregationMaxQueryGen;
+use super::key_aggregation_min::KeyAggregationMinQueryGen;
+use super::key_aggregation_sum::KeyAggregationSumQueryGen;
+use super::map::MapQueryGen;
+use super::window_part_min::WindowPartMinQueryGen;
 use super::QueryGen;
 
 #[derive(Hash, Debug, Clone, Copy, PartialEq, Eq)]
@@ -30,6 +31,7 @@ pub enum QueryGenStrategy {
     KeyAggSum,
     KeyAggCount,
     KeyAggAvg,
+    WinPartMin,
 }
 
 impl Into<Yaml> for &QueryGenStrategy {
@@ -47,6 +49,7 @@ impl Into<Yaml> for &QueryGenStrategy {
             QueryGenStrategy::KeyAggSum => "KeyAggSum",
             QueryGenStrategy::KeyAggCount => "KeyAggCount",
             QueryGenStrategy::KeyAggAvg => "KeyAggAvg",
+            QueryGenStrategy::WinPartMin => "WinPartMin",
         };
         Yaml::String(str.to_string())
     }
@@ -70,6 +73,7 @@ impl TryFrom<&Yaml> for QueryGenStrategy {
                 "KeyAggSum" => Ok(QueryGenStrategy::KeyAggSum),
                 "KeyAggCount" => Ok(QueryGenStrategy::KeyAggCount),
                 "KeyAggAvg" => Ok(QueryGenStrategy::KeyAggAvg),
+                "WinPartMin" => Ok(QueryGenStrategy::WinPartMin),
                 _ => Err(format!("Unknown strategy: {}", s)),
             }
         } else {
@@ -91,18 +95,19 @@ impl QueryGenFactory {
         strat: QueryGenStrategy,
     ) -> Box<dyn QueryGen> {
         match strat {
-            QueryGenStrategy::Filter => Box::new(FilterOracle::new(schema)),
-            QueryGenStrategy::Map => Box::new(MapOracle::new(schema)),
-            QueryGenStrategy::AggMin => Box::new(AggregationMinOracle::new(schema)),
-            QueryGenStrategy::AggMax => Box::new(AggregationMaxOracle::new(schema)),
-            QueryGenStrategy::AggSum => Box::new(AggregationSumOracle::new(schema)),
-            QueryGenStrategy::AggCount => Box::new(AggregationCountOracle::new(schema)),
-            QueryGenStrategy::AggAvg => Box::new(AggregationAvgOracle::new(schema)),
-            QueryGenStrategy::KeyAggMin => Box::new(KeyAggregationMinOracle::new(schema)),
-            QueryGenStrategy::KeyAggMax => Box::new(KeyAggregationMaxOracle::new(schema)),
-            QueryGenStrategy::KeyAggSum =>  Box::new(KeyAggregationSumOracle::new(schema)),
-            QueryGenStrategy::KeyAggCount => Box::new(KeyAggregationCountOracle::new(schema)),
-            QueryGenStrategy::KeyAggAvg => Box::new(KeyAggregationAvgOracle::new(schema)),
+            QueryGenStrategy::Filter => Box::new(FilterQueryGen::new(schema)),
+            QueryGenStrategy::Map => Box::new(MapQueryGen::new(schema)),
+            QueryGenStrategy::AggMin => Box::new(AggregationMinQueryGen::new(schema)),
+            QueryGenStrategy::AggMax => Box::new(AggregationMaxQueryGen::new(schema)),
+            QueryGenStrategy::AggSum => Box::new(AggregationSumQueryGen::new(schema)),
+            QueryGenStrategy::AggCount => Box::new(AggregationCountQueryGen::new(schema)),
+            QueryGenStrategy::AggAvg => Box::new(AggregationAvgQueryGen::new(schema)),
+            QueryGenStrategy::KeyAggMin => Box::new(KeyAggregationMinQueryGen::new(schema)),
+            QueryGenStrategy::KeyAggMax => Box::new(KeyAggregationMaxQueryGen::new(schema)),
+            QueryGenStrategy::KeyAggSum =>  Box::new(KeyAggregationSumQueryGen::new(schema)),
+            QueryGenStrategy::KeyAggCount => Box::new(KeyAggregationCountQueryGen::new(schema)),
+            QueryGenStrategy::KeyAggAvg => Box::new(KeyAggregationAvgQueryGen::new(schema)),
+            QueryGenStrategy::WinPartMin => Box::new(WindowPartMinQueryGen::new(schema)),
         }
     }
 }
