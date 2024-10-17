@@ -96,6 +96,24 @@ fn generate_float(rng: &mut ThreadRng, data_type: FloatType) -> String {
         FloatType::Bit64 => rng.gen::<f64>().to_string(),
     }
 }
+pub struct IncStrategy {
+    counter: u32,
+}
+impl IncStrategy {
+    pub fn new(inital_val: u32) -> Self {
+        Self {
+            counter: inital_val,
+        }
+    }
+}
+
+impl FieldGeneratorStrategy for IncStrategy {
+    fn generate_field(&mut self) -> String {
+        let result = self.counter.to_string();
+        self.counter += 1;
+        result
+    }
+}
 
 /// This strategy generates bursty time stamps
 pub struct TimeStampStrategy {

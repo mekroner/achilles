@@ -37,7 +37,7 @@ impl Default for NetworkConfig {
     fn default() -> Self {
         Self {
             coord_ip: Ipv4Addr::LOCALHOST,
-            coord_rest_port: 8080,
+            coord_rest_port: 8000,
             coord_rpc_port: 4000,
         }
     }
@@ -46,8 +46,8 @@ impl Default for NetworkConfig {
 impl Default for LancerConfig {
     fn default() -> Self {
         let runner_config = RunnerConfig {
-            coordinator_exec_path: "../../nebulastream/build/nes-coordinator/nesCoordinator".into(),
-            worker_exec_path: "../../nebulastream/build/nes-worker/nesWorker".into(),
+            coordinator_exec_path: "../nebulastream/build/nes-coordinator/nesCoordinator".into(),
+            worker_exec_path: "../nebulastream/build/nes-worker/nesWorker".into(),
             coordinator_config_path: None,
             worker_config_path: Vec::new(),
             output_io: OutputIO::Null,
@@ -74,8 +74,8 @@ impl Default for LancerConfig {
                 // QueryGenStrategy::WinPartAvg,
             ],
             test_run_count: 1,
-            oracle_reps: 10,
-            test_case_count: 1,
+            oracle_reps: 2,
+            test_case_count: 5,
         };
 
         LancerConfig {
