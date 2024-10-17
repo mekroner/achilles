@@ -2,4 +2,6 @@
 /generated-files
 /extract-diffs
 /dump
+*.profraw
+*.profdata
 *.log
