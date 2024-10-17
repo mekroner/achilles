@@ -1,13 +1,9 @@
-use std::{
-    cmp::Ordering,
-    error::Error,
-    num::{ParseFloatError, ParseIntError},
-    path::Path,
-};
+use std::{cmp::Ordering, error::Error, num::ParseFloatError, path::Path};
 
 use csv::StringRecord;
-use nes_types::{FloatType, IntType, NesType};
 use yaml_rust2::Yaml;
+
+use super::eval_error::EvalError;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum ResultRelation {
@@ -45,7 +41,7 @@ impl TryFrom<&Yaml> for ResultRelation {
     }
 }
 
-pub fn compare_files(path0: &Path, path1: &Path) -> Result<ResultRelation, Box<dyn Error>> {
+pub fn compare_files(path0: &Path, path1: &Path) -> Result<ResultRelation, EvalError> {
     if !is_row_count_equal(path0, path1)? {
         return Ok(ResultRelation::Diff);
     }
@@ -56,13 +52,13 @@ pub fn compare_files(path0: &Path, path1: &Path) -> Result<ResultRelation, Box<d
     return are_files_reordered(path0, path1);
 }
 
-pub fn is_row_count_equal(path0: &Path, path1: &Path) -> Result<bool, Box<dyn Error>> {
+pub fn is_row_count_equal(path0: &Path, path1: &Path) -> Result<bool, EvalError> {
     let mut rdr0 = csv::Reader::from_path(path0)?;
     let mut rdr1 = csv::Reader::from_path(path1)?;
     Ok(rdr0.records().count() == rdr1.records().count())
 }
 
-pub fn are_files_equal(path0: &Path, path1: &Path) -> Result<ResultRelation, Box<dyn Error>> {
+pub fn are_files_equal(path0: &Path, path1: &Path) -> Result<ResultRelation, EvalError> {
     let mut rdr0 = csv::Reader::from_path(path0)?;
     let mut rdr1 = csv::Reader::from_path(path1)?;
     let iter = rdr0.records().zip(rdr1.records());
@@ -96,16 +92,23 @@ pub fn comp_records(rec0: &StringRecord, rec1: &StringRecord) -> Ordering {
     len0.cmp(&len1)
 }
 
-pub fn are_files_reordered(path0: &Path, path1: &Path) -> Result<ResultRelation, Box<dyn Error>> {
+pub fn are_files_reordered(path0: &Path, path1: &Path) -> Result<ResultRelation, EvalError> {
     let mut rdr0 = csv::Reader::from_path(path0)?;
     let mut rdr1 = csv::Reader::from_path(path1)?;
 
     let header0 = rdr0.headers()?;
     let header1 = rdr1.headers()?;
-    let type_strings = extract_types(&header0).unwrap();
-    log::debug!("Header types_string: {:?}", type_strings);
-    let types = convert_types(&type_strings);
-    log::debug!("Header types: {:?}", types);
+    let type_strings0 = extract_types(&header0)?;
+    let type_strings1 = extract_types(&header1)?;
+    let types0 = convert_types(&type_strings1)?;
+    let types1 = convert_types(&type_strings0)?;
+    // FIXME: This might lead to errors so
+    if types0 != types1 {
+        return Err(EvalError::HeaderConflictError(format!(
+            "Header {:?}, conflicts with header {:?}",
+            header0, header1
+        )));
+    }
 
     let mut data0: Vec<StringRecord> = rdr0
         .records()
@@ -120,7 +123,7 @@ pub fn are_files_reordered(path0: &Path, path1: &Path) -> Result<ResultRelation,
     let iter = data0.iter().zip(data1.iter());
     for (rec0, rec1) in iter {
         log::trace!("{:?} == {:?}", rec0, rec1);
-        if !are_records_equal(&rec0, &rec1, &types).expect("Should be able to detect to compare records") {
+        if !are_records_equal(&rec0, &rec1, &types0)? {
             return Ok(ResultRelation::Diff);
         }
     }
@@ -150,23 +153,10 @@ fn extract_types(record: &StringRecord) -> Result<Vec<String>, EvalError> {
     Ok(types)
 }
 
-#[derive(Debug)]
-enum EvalError {
-    ParseFloatError(ParseFloatError),
-    TypeExtractionError(String),
-    TypeConversionError(String),
-}
-
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum EvalType {
     Int,
     Float,
-}
-
-impl From<ParseFloatError> for EvalError {
-    fn from(err: ParseFloatError) -> EvalError {
-        EvalError::ParseFloatError(err)
-    }
 }
 
 fn convert_types(string_types: &[String]) -> Result<Vec<EvalType>, EvalError> {
@@ -184,7 +174,25 @@ fn convert_types(string_types: &[String]) -> Result<Vec<EvalType>, EvalError> {
         .collect()
 }
 
-fn are_records_equal(rec0: &StringRecord, rec1: &StringRecord, types: &[EvalType]) -> Result<bool, EvalError> {
+fn are_types_equal(types0: &[EvalType], types1: &[EvalType]) -> bool {
+    if types0.len() != types1.len() {
+        return false;
+    }
+
+    let iter = types0.iter().zip(types1.iter());
+    for (&a, &b) in iter {
+        if a != b {
+            return false;
+        }
+    }
+    true
+}
+
+fn are_records_equal(
+    rec0: &StringRecord,
+    rec1: &StringRecord,
+    types: &[EvalType],
+) -> Result<bool, EvalError> {
     let rec_iter = rec0.iter().zip(rec1.iter()).zip(types.iter());
     for ((field0, field1), data_type) in rec_iter {
         let are_files_equal = are_fields_equal(field0, field1, *data_type)?;
