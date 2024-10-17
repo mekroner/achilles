@@ -1,6 +1,12 @@
-use std::{cmp::Ordering, error::Error, path::Path};
+use std::{
+    cmp::Ordering,
+    error::Error,
+    num::{ParseFloatError, ParseIntError},
+    path::Path,
+};
 
 use csv::StringRecord;
+use nes_types::{FloatType, IntType, NesType};
 use yaml_rust2::Yaml;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -64,21 +70,11 @@ pub fn are_files_equal(path0: &Path, path1: &Path) -> Result<ResultRelation, Box
         let record0 = res0?;
         let record1 = res1?;
         log::trace!("{:?} == {:?}", record0, record1);
-        if !are_records_equal(&record0, &record1) {
+        if !are_records_equal_string(&record0, &record1) {
             return Ok(ResultRelation::Diff);
         }
     }
     Ok(ResultRelation::Equal)
-}
-
-fn are_records_equal(rec0: &StringRecord, rec1: &StringRecord) -> bool {
-    let rec_iter = rec0.iter().zip(rec1.iter());
-    for (field0, field1) in rec_iter {
-        if field0 != field1 {
-            return false;
-        }
-    }
-    true
 }
 
 /// compares two String records for ordering
@@ -103,6 +99,14 @@ pub fn comp_records(rec0: &StringRecord, rec1: &StringRecord) -> Ordering {
 pub fn are_files_reordered(path0: &Path, path1: &Path) -> Result<ResultRelation, Box<dyn Error>> {
     let mut rdr0 = csv::Reader::from_path(path0)?;
     let mut rdr1 = csv::Reader::from_path(path1)?;
+
+    let header0 = rdr0.headers()?;
+    let header1 = rdr1.headers()?;
+    let type_strings = extract_types(&header0).unwrap();
+    log::debug!("Header types_string: {:?}", type_strings);
+    let types = convert_types(&type_strings);
+    log::debug!("Header types: {:?}", types);
+
     let mut data0: Vec<StringRecord> = rdr0
         .records()
         .collect::<Result<Vec<StringRecord>, csv::Error>>()?;
@@ -116,9 +120,109 @@ pub fn are_files_reordered(path0: &Path, path1: &Path) -> Result<ResultRelation,
     let iter = data0.iter().zip(data1.iter());
     for (rec0, rec1) in iter {
         log::trace!("{:?} == {:?}", rec0, rec1);
-        if !are_records_equal(&rec0, &rec1) {
+        if !are_records_equal(&rec0, &rec1, &types) {
             return Ok(ResultRelation::Diff);
         }
     }
     Ok(ResultRelation::Reordered)
+}
+
+fn extract_types(record: &StringRecord) -> Result<Vec<String>, String> {
+    let mut types = Vec::new();
+
+    for field in record.iter() {
+        if let Some(type_part) = field.split('$').nth(1) {
+            if let Some(type_str) = type_part.split(':').nth(1) {
+                types.push(type_str.to_string());
+            } else {
+                return Err(format!("No type found in field: {}", field));
+            }
+        } else {
+            return Err(format!("Invalid field format: {}", field));
+        }
+    }
+    Ok(types)
+}
+
+#[derive(Debug)]
+enum EvalError {
+    ParseIntError(ParseIntError),
+    ParseFloatError(ParseFloatError),
+}
+
+impl From<ParseIntError> for EvalError {
+    fn from(err: ParseIntError) -> EvalError {
+        EvalError::ParseIntError(err)
+    }
+}
+
+impl From<ParseFloatError> for EvalError {
+    fn from(err: ParseFloatError) -> EvalError {
+        EvalError::ParseFloatError(err)
+    }
+}
+
+fn convert_types(string_types: &[String]) -> Vec<NesType> {
+    string_types
+        .iter()
+        .map(|str_type| match str_type.to_lowercase().as_str() {
+            "integer(64 bits)" | "integer(32 bits)" | "integer(16 bits)" | "integer(8 bits)" => {
+                NesType::Int(IntType::Signed64)
+            }
+            "float(32 bits)" | "float(64 bits)" => NesType::Float(FloatType::Bit64),
+            "bool" => NesType::Bool,
+            "char" => NesType::Char,
+            _ => todo!(),
+            // _ => NesType::Undefined,
+        })
+        .collect()
+}
+
+fn are_records_equal(rec0: &StringRecord, rec1: &StringRecord, types: &[NesType]) -> bool {
+    let rec_iter = rec0.iter().zip(rec1.iter()).zip(types.iter());
+    for ((field0, field1), data_type) in rec_iter {
+        // FIXME: Use proper Error management here
+        let are_files_equal =
+            are_fields_equal(field0, field1, *data_type).expect("Should be able to compare fields");
+        if !are_files_equal {
+            return false;
+        }
+    }
+    true
+}
+
+fn are_fields_equal(field0: &str, field1: &str, data_type: NesType) -> Result<bool, EvalError> {
+    let epsilon = 1e-3;
+    Ok(match data_type {
+        NesType::Undefined => todo!(),
+        NesType::Bool => todo!(),
+        NesType::Char => todo!(),
+        NesType::Int(IntType::Signed8)
+        | NesType::Int(IntType::Signed16)
+        | NesType::Int(IntType::Signed32)
+        | NesType::Int(IntType::Signed64) => field0.parse::<i64>()? == field1.parse::<i64>()?,
+        NesType::Int(IntType::Unsigned8)
+        | NesType::Int(IntType::Unsigned16)
+        | NesType::Int(IntType::Unsigned32)
+        | NesType::Int(IntType::Unsigned64) => field0.parse::<u64>()? == field1.parse::<u64>()?,
+        NesType::Float(_) => {
+            let f0 = field0.parse::<f64>()?;
+            let f1 = field1.parse::<f64>()?;
+            float_equal(f0, f1, epsilon)
+        }
+    })
+}
+
+fn float_equal(a: f64, b: f64, epsilon: f64) -> bool {
+    (a - b).abs() < epsilon
+}
+
+fn are_records_equal_string(rec0: &StringRecord, rec1: &StringRecord) -> bool {
+    let rec_iter = rec0.iter().zip(rec1.iter());
+    for (field0, field1) in rec_iter {
+        if field0 != field1 {
+            return false;
+        }
+    }
+    true
 }

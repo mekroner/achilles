@@ -37,7 +37,7 @@ impl Default for NetworkConfig {
     fn default() -> Self {
         Self {
             coord_ip: Ipv4Addr::LOCALHOST,
-            coord_rest_port: 8000,
+            coord_rest_port: 8080,
             coord_rpc_port: 4000,
         }
     }
@@ -59,7 +59,7 @@ impl Default for LancerConfig {
                 // QueryGenStrategy::Map,
                 // QueryGenStrategy::AggMin,
                 // QueryGenStrategy::AggMax,
-                // QueryGenStrategy::AggSum,
+                QueryGenStrategy::AggSum,
                 // QueryGenStrategy::AggCount,
                 // QueryGenStrategy::AggAvg,
                 // QueryGenStrategy::KeyAggMin
@@ -67,21 +67,21 @@ impl Default for LancerConfig {
                 // QueryGenStrategy::KeyAggSum
                 // QueryGenStrategy::KeyAggCount,
                 // QueryGenStrategy::KeyAggAvg,
-                QueryGenStrategy::WinPartMin,
-                QueryGenStrategy::WinPartMax,
-                QueryGenStrategy::WinPartSum,
-                QueryGenStrategy::WinPartCount,
-                QueryGenStrategy::WinPartAvg,
+                // QueryGenStrategy::WinPartMin,
+                // QueryGenStrategy::WinPartMax,
+                // QueryGenStrategy::WinPartSum,
+                // QueryGenStrategy::WinPartCount,
+                // QueryGenStrategy::WinPartAvg,
             ],
             test_run_count: 1,
-            oracle_reps: 1,
+            oracle_reps: 10,
             test_case_count: 1,
         };
 
         LancerConfig {
             // generated_files_path,
             path_config: FilePathConfig::default(),
-            test_case_timeout: Duration::from_secs(30),
+            test_case_timeout: Duration::from_secs(20),
             runner_config,
             skip_to_stage: Stages::default(),
             test_config,
