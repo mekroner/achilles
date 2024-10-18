@@ -17,6 +17,46 @@ pub struct TestConfig {
     pub test_case_count: u32,
 }
 
+pub enum MemoryLayoutPolicy {
+    ForceRowLayout,
+    ForceColumnLayout,
+}
+
+pub enum QueryMergerRule {
+    DefaultQueryMergerRule,
+    Z3SignatureBasedCompleteQueryMergerRule,
+    Z3SignatureBasedPartialQueryMergerRule,
+    HashSignatureBasedCompleteQueryMergerRule,
+    HashSignatureBasedPartialQueryMergerRule,
+    HybridCompleteQueryMergerRule,
+}
+
+pub struct NesOptConfig {
+    distributed_window_child_threshold: u32,
+    distributed_window_combiner_threshold: u32,
+    memory_layout_policy: MemoryLayoutPolicy,
+    perform_advance_semantic_validation: bool,
+    perform_distributed_windows_optimization: bool,
+    perform_only_source_operator_expansion: bool,
+    query_batch_size: u32,
+    query_merger_rule: QueryMergerRule,
+}
+
+impl Default for NesOptConfig {
+    fn default() -> Self {
+        Self {
+            distributed_window_child_threshold: 2,
+            distributed_window_combiner_threshold: 4,
+            memory_layout_policy: MemoryLayoutPolicy::ForceRowLayout,
+            perform_advance_semantic_validation: false,
+            perform_distributed_windows_optimization: true,
+            perform_only_source_operator_expansion: false,
+            query_batch_size: 1,
+            query_merger_rule: QueryMergerRule::DefaultQueryMergerRule,
+        }
+    }
+}
+
 pub struct LancerConfig {
     pub path_config: FilePathConfig,
     pub test_case_timeout: Duration,
@@ -24,6 +64,7 @@ pub struct LancerConfig {
     pub skip_to_stage: Stages,
     pub test_config: TestConfig,
     pub net_config: NetworkConfig,
+    pub opt_config: NesOptConfig,
 }
 
 #[derive(Clone)]
@@ -46,8 +87,8 @@ impl Default for NetworkConfig {
 impl Default for LancerConfig {
     fn default() -> Self {
         let runner_config = RunnerConfig {
-            coordinator_exec_path: "../nebulastream/build/nes-coordinator/nesCoordinator".into(),
-            worker_exec_path: "../nebulastream/build/nes-worker/nesWorker".into(),
+            coordinator_exec_path: "../../nebulastream/build/nes-coordinator/nesCoordinator".into(),
+            worker_exec_path: "../../nebulastream/build/nes-worker/nesWorker".into(),
             coordinator_config_path: None,
             worker_config_path: Vec::new(),
             output_io: OutputIO::Null,
@@ -86,6 +127,7 @@ impl Default for LancerConfig {
             skip_to_stage: Stages::default(),
             test_config,
             net_config: NetworkConfig::default(),
+            opt_config: NesOptConfig::default(),
         }
     }
 }

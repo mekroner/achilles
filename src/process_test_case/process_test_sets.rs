@@ -241,6 +241,7 @@ async fn process_test_case(
         if is_timeout {
             log::warn!("Failed to execute test case {}: Timed out.", test_case.id);
             // To stop the query is apparently not effective because nebula stream is stuck
+            // We have to restart nebula stream instead
             // if let Err(err) = runtime.stop_query(id).await {
             //     log::error!(
             //         "Failed to stop test_case {} after time out: {err}",
