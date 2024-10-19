@@ -1,5 +1,7 @@
 pub mod generate_files;
 pub mod config;
+pub mod nes_query_comp_config;
+pub mod nes_opt_config;
 // pub mod run_queries;
 pub mod test_case_exec;
 pub mod test_case_gen;

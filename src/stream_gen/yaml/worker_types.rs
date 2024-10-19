@@ -1,5 +1,7 @@
 use yaml_rust2::{yaml::Hash, Yaml};
 
+use crate::nes_query_comp_config::NesQueryCompilerConfig;
+
 #[allow(non_snake_case)]
 pub struct YamlPhysicalSourceConfig {
     pub skipHeader: bool,
@@ -14,12 +16,12 @@ pub struct YamlPhysicalSource {
     pub configuration: YamlPhysicalSourceConfig,
 }
 
-
 #[allow(non_snake_case)]
 pub struct YamlWorkerConfig {
     pub logLevel: String,
     pub physicalSources: Vec<YamlPhysicalSource>,
     pub workerId: i32,
+    pub query_comp_config: NesQueryCompilerConfig,
 }
 
 impl Default for YamlWorkerConfig {
@@ -28,6 +30,7 @@ impl Default for YamlWorkerConfig {
             logLevel: "LOG_ERROR".to_string(),
             physicalSources: Vec::new(),
             workerId: 0,
+            query_comp_config: NesQueryCompilerConfig::default(),
         }
     }
 }
@@ -51,6 +54,12 @@ impl Into<Yaml> for &YamlWorkerConfig {
         config_map.insert(
             Yaml::String("workerId".to_string()),
             Yaml::Integer(self.workerId.into()),
+        );
+
+        // query Compiler
+        config_map.insert(
+            Yaml::String("queryCompiler".to_string()),
+            (&self.query_comp_config).into(),
         );
         Yaml::Hash(config_map)
     }
@@ -93,4 +102,3 @@ impl Into<Hash> for &YamlPhysicalSourceConfig {
         config_map
     }
 }
-

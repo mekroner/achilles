@@ -5,6 +5,8 @@ use std::{
 };
 
 use crate::{
+    nes_opt_config::NesOptConfig,
+    nes_query_comp_config::NesQueryCompilerConfig,
     runner::runner_config::{OutputIO, RunnerConfig},
     stages::Stages,
     test_case_gen::oracle::QueryGenStrategy,
@@ -17,46 +19,6 @@ pub struct TestConfig {
     pub test_case_count: u32,
 }
 
-pub enum MemoryLayoutPolicy {
-    ForceRowLayout,
-    ForceColumnLayout,
-}
-
-pub enum QueryMergerRule {
-    DefaultQueryMergerRule,
-    Z3SignatureBasedCompleteQueryMergerRule,
-    Z3SignatureBasedPartialQueryMergerRule,
-    HashSignatureBasedCompleteQueryMergerRule,
-    HashSignatureBasedPartialQueryMergerRule,
-    HybridCompleteQueryMergerRule,
-}
-
-pub struct NesOptConfig {
-    distributed_window_child_threshold: u32,
-    distributed_window_combiner_threshold: u32,
-    memory_layout_policy: MemoryLayoutPolicy,
-    perform_advance_semantic_validation: bool,
-    perform_distributed_windows_optimization: bool,
-    perform_only_source_operator_expansion: bool,
-    query_batch_size: u32,
-    query_merger_rule: QueryMergerRule,
-}
-
-impl Default for NesOptConfig {
-    fn default() -> Self {
-        Self {
-            distributed_window_child_threshold: 2,
-            distributed_window_combiner_threshold: 4,
-            memory_layout_policy: MemoryLayoutPolicy::ForceRowLayout,
-            perform_advance_semantic_validation: false,
-            perform_distributed_windows_optimization: true,
-            perform_only_source_operator_expansion: false,
-            query_batch_size: 1,
-            query_merger_rule: QueryMergerRule::DefaultQueryMergerRule,
-        }
-    }
-}
-
 pub struct LancerConfig {
     pub path_config: FilePathConfig,
     pub test_case_timeout: Duration,
@@ -65,6 +27,7 @@ pub struct LancerConfig {
     pub test_config: TestConfig,
     pub net_config: NetworkConfig,
     pub opt_config: NesOptConfig,
+    pub query_comp_config: NesQueryCompilerConfig,
 }
 
 #[derive(Clone)]
@@ -128,6 +91,7 @@ impl Default for LancerConfig {
             test_config,
             net_config: NetworkConfig::default(),
             opt_config: NesOptConfig::default(),
+            query_comp_config: NesQueryCompilerConfig::default(),
         }
     }
 }

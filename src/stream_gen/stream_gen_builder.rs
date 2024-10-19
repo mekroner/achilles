@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 
-use crate::config::NetworkConfig;
+use crate::{
+    config::NetworkConfig, nes_opt_config::NesOptConfig, nes_query_comp_config::NesQueryCompilerConfig
+};
 
 use super::{
     stream_gen::{NesLogLevel, StreamGen},
@@ -14,6 +16,8 @@ pub struct StreamGenBuilder {
     worker_log_level: NesLogLevel,
     coordinator_log_level: NesLogLevel,
     network_config: NetworkConfig,
+    query_comp_config: NesQueryCompilerConfig,
+    opt_config: NesOptConfig,
 }
 
 pub struct LogicalSourceBuilder {
@@ -38,7 +42,19 @@ impl StreamGenBuilder {
             worker_log_level: self.worker_log_level,
             coordinator_log_level: self.coordinator_log_level,
             network_config: self.network_config,
+            query_comp_config: self.query_comp_config,
+            opt_config: self.opt_config,
         }
+    }
+
+    pub fn query_comp_config(mut self, query_comp_config: NesQueryCompilerConfig) -> Self {
+        self.query_comp_config = query_comp_config;
+        self
+    }
+
+    pub fn opt_config(mut self, opt_config: NesOptConfig) -> Self {
+        self.opt_config = opt_config;
+        self
     }
 
     pub fn network_config(mut self, network_config: NetworkConfig) -> Self {

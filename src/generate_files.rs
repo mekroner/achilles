@@ -21,7 +21,9 @@ pub fn generate_files(test_run_id: u32, config: &LancerConfig) {
         .network_config(config.net_config.clone())
         .coordinator_log_level(NesLogLevel::Debug)
         .worker_log_level(NesLogLevel::Debug)
-        .add_source_bundles(source_bundles);
+        .add_source_bundles(source_bundles)
+        .query_comp_config(config.query_comp_config.clone())
+        .opt_config(config.opt_config.clone());
     let result = builder.build().generate();
 
     if let Err(err) = result {

@@ -2,6 +2,8 @@ use nes_type::YamlNesType;
 use yaml_rust2::{Yaml, YamlEmitter};
 
 use crate::config::NetworkConfig;
+use crate::nes_opt_config::NesOptConfig;
+use crate::nes_query_comp_config::NesQueryCompilerConfig;
 
 use super::logical_source::LogicalSource;
 use super::physical_source::PhysicalSource;
@@ -48,6 +50,8 @@ pub struct StreamGen {
     pub worker_log_level: NesLogLevel,
     pub coordinator_log_level: NesLogLevel,
     pub network_config: NetworkConfig,
+    pub query_comp_config: NesQueryCompilerConfig,
+    pub opt_config: NesOptConfig,
 }
 
 impl StreamGen {
@@ -106,6 +110,7 @@ impl StreamGen {
             coordinatorIp: self.network_config.coord_ip,
             restPort: self.network_config.coord_rest_port.into(),
             rpcPort: self.network_config.coord_rpc_port.into(),
+            opt_config: self.opt_config.clone(),
         };
         let yaml_obj: Yaml = (&coordinator_config).into();
         let mut out_str = String::new();
@@ -140,6 +145,7 @@ impl StreamGen {
                         },
                     }],
                     workerId: worker_id,
+                    query_comp_config: self.query_comp_config.clone(),
                     ..Default::default()
                 };
 

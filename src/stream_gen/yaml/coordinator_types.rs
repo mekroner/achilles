@@ -2,7 +2,10 @@ use nes_rust_client::expression::Field;
 use std::net::Ipv4Addr;
 use yaml_rust2::{yaml::Hash, Yaml};
 
-use crate::stream_gen::LogicalSource;
+use crate::{
+    nes_opt_config::{MemoryLayoutPolicy, NesOptConfig, QueryMergerRule},
+    stream_gen::LogicalSource,
+};
 
 use super::nes_type::YamlNesType;
 
@@ -25,6 +28,7 @@ pub struct YamlCoordinatorConfig {
     pub restPort: u32,
     pub rpcPort: u32,
     pub logicalSources: Vec<YamlLogicalSource>,
+    pub opt_config: NesOptConfig,
 }
 
 impl Into<Yaml> for &YamlCoordinatorConfig {
@@ -46,6 +50,9 @@ impl Into<Yaml> for &YamlCoordinatorConfig {
             Yaml::String("rpcPort".into()),
             Yaml::Integer(self.rpcPort.into()),
         );
+
+        config_map.insert(Yaml::String("optimizer".into()), (&self.opt_config).into());
+
         let source_array = self
             .logicalSources
             .iter()
@@ -85,6 +92,9 @@ impl TryFrom<&Yaml> for YamlCoordinatorConfig {
         let Yaml::Array(ref sources) = value["logicalSources"] else {
             return Err("Failed to parse YamlCoordinatorConfig: logicalSources".to_string());
         };
+        
+        let opt_config = NesOptConfig::try_from(&value["optimizer"])?;
+
         let logicalSources = sources
             .into_iter()
             .map(|source| source.try_into())
@@ -95,6 +105,7 @@ impl TryFrom<&Yaml> for YamlCoordinatorConfig {
             restPort: rest_port as u32,
             rpcPort: rpc_port as u32,
             logicalSources,
+            opt_config,
         })
     }
 }
