@@ -1,0 +1,7 @@
+---
+- id: 0
+  strategy: AggSum
+  test_cases:
+    - id: Other0
+      relation: Equal
+      query: "logical_source(\"source-0\").filter((((Field(\"f7\") / Field(\"f7\")) - Field(\"f2\")) >= ((Field(\"f8\") - 46246) / Field(\"f7\")))).window(TumblingWindow(14215ms, EventTime(\"ts\", Milliseconds))).apply(sum(Field(\"f5\")), ).union(logical_source(\"source-0\").filter(!((((Field(\"f7\") / Field(\"f7\")) - Field(\"f2\")) >= ((Field(\"f8\") - 46246) / Field(\"f7\"))))).window(TumblingWindow(14215ms, EventTime(\"ts\", Milliseconds))).apply(sum(Field(\"f5\")), )).project(Field(\"start\").as(\"ts\"), Field(\"end\"), Field(\"f5\"), ).window(TumblingWindow(14215ms, EventTime(\"ts\", Milliseconds))).apply(sum(Field(\"f5\")), ).sink(FileSink(\"exp_gen_files/test-run-0/results/test-set0-other0.csv\", CSV_FORMAT, false));"

@@ -1,0 +1,16 @@
+---
+logLevel: LOG_DEBUG
+physicalSources:
+  - logicalSourceName: source-3
+    physicalSourceName: source-3-0
+    type: CSV_SOURCE
+    configuration:
+      skipHeader: true
+      filePath: exp_gen_files/test-run-0/data/source-3-0.csv
+workerId: 6
+queryCompiler:
+  pipeliningStrategy: OPERATOR_FUSION
+  compilationStrategy: OPTIMIZE
+  outputBufferOptimizationLevel: ALL
+  windowingStrategy: LEGACY
+  queryCompilerType: DEFAULT_QUERY_COMPILER

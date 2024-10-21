@@ -1,8 +1,8 @@
-use std::{fs, path::Path};
+use std::{fs, path::{Path, PathBuf}};
 
 use yaml_rust2::{Yaml, YamlLoader};
 
-use crate::{config::TestConfig, LancerConfig};
+use crate::{config::{FilePathConfig, TestConfig}, LancerConfig};
 
 // FIXME: fully implement this function
 pub fn load_config(path: &Path) -> LancerConfig {
@@ -25,6 +25,7 @@ pub fn load_config(path: &Path) -> LancerConfig {
             if let Yaml::String(ref key_str) = key {
                 match key_str.as_str() {
                     "test_config" => config.test_config = parse_test_config(value),
+                    "path_config" => config.path_config = parse_path_config(value),
                     _ => {}
                 }
             }
@@ -84,6 +85,83 @@ fn parse_test_config(yaml: &Yaml) -> TestConfig {
                             continue;
                         };
                         config.physical_source_count = physical_source_count as u32;
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+    config
+}
+
+fn parse_path_config(yaml: &Yaml) -> FilePathConfig {
+    let mut config = FilePathConfig::default();
+    if let Yaml::Hash(ref hash) = yaml {
+        for (key, value) in hash {
+            if let Yaml::String(ref key_str) = key {
+                match key_str.as_str() {
+                    "base" => {
+                        let Some(base) = value.as_str() else {
+                            log::error!("Unable to parse base");
+                            continue;
+                        };
+                        config.base = PathBuf::from(base);
+                    }
+                    "test_run" => {
+                        let Some(test_run) = value.as_str() else {
+                            log::error!("Unable to parse test_run");
+                            continue;
+                        };
+                        config.test_run = PathBuf::from(test_run);
+                    }
+                    "stream_config" => {
+                        let Some(stream_config) = value.as_str() else {
+                            log::error!("Unable to parse stream_config");
+                            continue;
+                        };
+                        config.stream_config = PathBuf::from(stream_config);
+                    }
+                    "results" => {
+                        let Some(results) = value.as_str() else {
+                            log::error!("Unable to parse results");
+                            continue;
+                        };
+                        config.results = PathBuf::from(results);
+                    }
+                    "coordinator_config_file" => {
+                        let Some(coordinator_config_file) = value.as_str() else {
+                            log::error!("Unable to parse coordinator_config_file");
+                            continue;
+                        };
+                        config.coordinator_config_file = PathBuf::from(coordinator_config_file);
+                    }
+                    "worker_configs" => {
+                        let Some(worker_configs) = value.as_str() else {
+                            log::error!("Unable to parse worker_configs");
+                            continue;
+                        };
+                        config.worker_configs = PathBuf::from(worker_configs);
+                    }
+                    "test_sets_file" => {
+                        let Some(test_sets_file) = value.as_str() else {
+                            log::error!("Unable to parse test_sets_file");
+                            continue;
+                        };
+                        config.test_sets_file = PathBuf::from(test_sets_file);
+                    }
+                    "test_set_execs_file" => {
+                        let Some(test_set_execs_file) = value.as_str() else {
+                            log::error!("Unable to parse test_set_execs_file");
+                            continue;
+                        };
+                        config.test_set_execs_file = PathBuf::from(test_set_execs_file);
+                    }
+                    "test_set_results_file" => {
+                        let Some(test_set_results_file) = value.as_str() else {
+                            log::error!("Unable to parse test_set_results_file");
+                            continue;
+                        };
+                        config.test_set_results_file = PathBuf::from(test_set_results_file);
                     }
                     _ => {}
                 }

@@ -1,0 +1,147 @@
+---
+logLevel: LOG_DEBUG
+coordinatorIp: 127.0.0.1
+restPort: 8000
+rpcPort: 4000
+optimizer:
+  distributedJoinOptimizationMode: NONE
+  enableIncrementalPlacement: false
+  placementAmendmentThreadCount: 1
+  placementAmendmentMode: PESSIMISTIC
+  enableNemoPlacement: false
+  performOnlySourceOperatorExpansion: false
+  advanceSemanticValidation: false
+  memoryLayoutPolicy: FORCE_ROW_LAYOUT
+  allowExhaustiveContainmentCheck: false
+  queryMergerRule: DefaultQueryMergerRule
+logicalSources:
+  - logicalSourceName: source-0
+    fields:
+      - name: ts
+        type: INT64
+      - name: key
+        type: INT64
+      - name: f0
+        type: FLOAT32
+      - name: f1
+        type: UINT32
+      - name: f2
+        type: UINT16
+      - name: f3
+        type: FLOAT64
+      - name: f4
+        type: INT64
+      - name: f5
+        type: INT16
+      - name: f6
+        type: INT8
+      - name: f7
+        type: UINT16
+      - name: f8
+        type: UINT16
+      - name: f9
+        type: FLOAT64
+  - logicalSourceName: source-1
+    fields:
+      - name: ts
+        type: INT64
+      - name: key
+        type: INT64
+      - name: f0
+        type: INT32
+      - name: f1
+        type: INT64
+      - name: f2
+        type: FLOAT32
+      - name: f3
+        type: UINT16
+      - name: f4
+        type: INT32
+      - name: f5
+        type: UINT32
+      - name: f6
+        type: INT16
+      - name: f7
+        type: INT64
+      - name: f8
+        type: INT32
+      - name: f9
+        type: UINT16
+  - logicalSourceName: source-2
+    fields:
+      - name: ts
+        type: INT64
+      - name: key
+        type: INT64
+      - name: f0
+        type: FLOAT32
+      - name: f1
+        type: FLOAT32
+      - name: f2
+        type: UINT32
+      - name: f3
+        type: INT64
+      - name: f4
+        type: UINT8
+      - name: f5
+        type: UINT64
+      - name: f6
+        type: INT16
+      - name: f7
+        type: UINT32
+      - name: f8
+        type: UINT16
+      - name: f9
+        type: FLOAT32
+  - logicalSourceName: source-3
+    fields:
+      - name: ts
+        type: INT64
+      - name: key
+        type: INT64
+      - name: f0
+        type: UINT64
+      - name: f1
+        type: UINT8
+      - name: f2
+        type: INT8
+      - name: f3
+        type: INT32
+      - name: f4
+        type: UINT32
+      - name: f5
+        type: FLOAT32
+      - name: f6
+        type: INT16
+      - name: f7
+        type: UINT16
+      - name: f8
+        type: FLOAT64
+      - name: f9
+        type: UINT16
+  - logicalSourceName: source-4
+    fields:
+      - name: ts
+        type: INT64
+      - name: key
+        type: INT64
+      - name: f0
+        type: UINT16
+      - name: f1
+        type: INT32
+      - name: f2
+        type: INT64
+      - name: f3
+        type: FLOAT64
+      - name: f4
+        type: FLOAT32
+      - name: f5
+        type: FLOAT32
+      - name: f6
+        type: INT16
+      - name: f7
+        type: FLOAT32
+      - name: f8
+        type: UINT64
+      - name: f9
+        type: INT64

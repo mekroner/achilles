@@ -107,15 +107,15 @@ impl Default for LancerConfig {
 }
 
 pub struct FilePathConfig {
-    base: PathBuf,
-    test_run: PathBuf,
-    stream_config: PathBuf,
-    results: PathBuf,
-    coordinator_config_file: PathBuf,
-    worker_configs: PathBuf,
-    test_sets_file: PathBuf,
-    test_set_execs_file: PathBuf,
-    test_set_results_file: PathBuf,
+    pub base: PathBuf,
+    pub test_run: PathBuf,
+    pub stream_config: PathBuf,
+    pub results: PathBuf,
+    pub coordinator_config_file: PathBuf,
+    pub worker_configs: PathBuf,
+    pub test_sets_file: PathBuf,
+    pub test_set_execs_file: PathBuf,
+    pub test_set_results_file: PathBuf,
 }
 
 impl Default for FilePathConfig {
