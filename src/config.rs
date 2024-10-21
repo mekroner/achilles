@@ -17,6 +17,9 @@ pub struct TestConfig {
     pub test_run_count: u32,
     pub oracle_reps: u32,
     pub test_case_count: u32,
+    pub field_count: u32,
+    pub record_count: u32,
+    pub physical_source_count: u32,
 }
 
 pub struct LancerConfig {
@@ -47,17 +50,9 @@ impl Default for NetworkConfig {
     }
 }
 
-impl Default for LancerConfig {
+impl Default for TestConfig {
     fn default() -> Self {
-        let runner_config = RunnerConfig {
-            coordinator_exec_path: "../../nebulastream/build/nes-coordinator/nesCoordinator".into(),
-            worker_exec_path: "../../nebulastream/build/nes-worker/nesWorker".into(),
-            coordinator_config_path: None,
-            worker_config_path: Vec::new(),
-            output_io: OutputIO::Null,
-        };
-
-        let test_config = TestConfig {
+        TestConfig {
             oracles: vec![
                 // QueryGenStrategy::Filter,
                 // QueryGenStrategy::Map,
@@ -77,9 +72,24 @@ impl Default for LancerConfig {
                 // QueryGenStrategy::WinPartCount,
                 // QueryGenStrategy::WinPartAvg,
             ],
+            field_count: 10,
+            record_count: 500,
+            physical_source_count: 5,
             test_run_count: 1,
             oracle_reps: 2,
             test_case_count: 5,
+        }
+    }
+}
+
+impl Default for LancerConfig {
+    fn default() -> Self {
+        let runner_config = RunnerConfig {
+            coordinator_exec_path: "../../nebulastream/build/nes-coordinator/nesCoordinator".into(),
+            worker_exec_path: "../../nebulastream/build/nes-worker/nesWorker".into(),
+            coordinator_config_path: None,
+            worker_config_path: Vec::new(),
+            output_io: OutputIO::Null,
         };
 
         LancerConfig {
@@ -88,7 +98,7 @@ impl Default for LancerConfig {
             test_case_timeout: Duration::from_secs(20),
             runner_config,
             skip_to_stage: Stages::default(),
-            test_config,
+            test_config: TestConfig::default(),
             net_config: NetworkConfig::default(),
             opt_config: NesOptConfig::default(),
             query_comp_config: NesQueryCompilerConfig::default(),
@@ -159,3 +169,4 @@ impl FilePathConfig {
         self.test_run(test_run_id).join(&self.test_set_results_file)
     }
 }
+

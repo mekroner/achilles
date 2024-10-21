@@ -1,5 +1,6 @@
 pub mod generate_files;
 pub mod config;
+pub mod load_config;
 pub mod nes_query_comp_config;
 pub mod nes_opt_config;
 // pub mod run_queries;

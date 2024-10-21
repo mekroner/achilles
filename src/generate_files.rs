@@ -14,7 +14,7 @@ use rand::thread_rng;
 
 pub fn generate_files(test_run_id: u32, config: &LancerConfig) {
     log::info!("Start generating files.");
-    let source_bundles = get_n_random_source_bundles(5);
+    let source_bundles = get_n_random_source_bundles(5, config);
 
     let builder = StreamGen::builder()
         .in_path(&config.path_config.test_run(test_run_id))
@@ -33,13 +33,13 @@ pub fn generate_files(test_run_id: u32, config: &LancerConfig) {
     log::info!("Generating files done.");
 }
 
-fn get_n_random_source_bundles(source_count: u32) -> Vec<SourceBundle> {
+fn get_n_random_source_bundles(source_count: u32, config: &LancerConfig) -> Vec<SourceBundle> {
     let mut source_bundles = Vec::new();
     for id in 0..source_count {
         let source_name = format!("source-{id}");
-        let field_count = 10;
-        let physical_source_count = 5;
-        let record_count = 500;
+        let field_count = config.test_config.field_count;
+        let physical_source_count = config.test_config.physical_source_count;
+        let record_count = config.test_config.record_count;
         let source_bundle = get_random_source_bundle(
             source_name,
             field_count,
