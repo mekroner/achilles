@@ -15,7 +15,7 @@ pub fn generate_test_sets(
     config: &LancerConfig,
     schema: &StreamSchema,
 ) -> Vec<TestSet> {
-    let query_gen_factory = QueryGenFactory::new();
+    let query_gen_factory = QueryGenFactory::new(config.test_config.predicate_depth);
     log::info!("Started  generate_test_cases:");
     let test_cases = config
         .test_config

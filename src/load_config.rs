@@ -86,6 +86,13 @@ fn parse_test_config(yaml: &Yaml) -> TestConfig {
                         };
                         config.physical_source_count = physical_source_count as u32;
                     }
+                    "predicate_depth" => {
+                        let Some(predicate_depth) = value.as_i64() else {
+                            log::error!("Unable to parse predicate_depth");
+                            continue;
+                        };
+                        config.predicate_depth = predicate_depth as u32;
+                    }
                     _ => {}
                 }
             }

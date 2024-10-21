@@ -18,6 +18,13 @@ pub struct AggregationMaxQueryGen {
     agg_field_name: String,
 }
 
+impl AggregationMaxQueryGen {
+    pub fn with_predicate_depth(mut self, depth: u32) -> Self {
+        self.predicate_depth = depth;
+        self
+    }
+}
+
 impl QueryGen for AggregationMaxQueryGen {
     fn new(schema: &StreamSchema) -> Self {
         let source = random_source(&schema);

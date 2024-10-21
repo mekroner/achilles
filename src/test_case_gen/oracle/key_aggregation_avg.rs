@@ -18,6 +18,13 @@ pub struct KeyAggregationAvgQueryGen {
     agg_field_name: String,
 }
 
+impl KeyAggregationAvgQueryGen {
+    pub fn with_predicate_depth(mut self, depth: u32) -> Self {
+        self.predicate_depth = depth;
+        self
+    }
+}
+
 impl QueryGen for KeyAggregationAvgQueryGen {
     fn new(schema: &StreamSchema) -> Self {
         let source = random_source(&schema);

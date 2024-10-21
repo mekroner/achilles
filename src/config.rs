@@ -20,6 +20,7 @@ pub struct TestConfig {
     pub field_count: u32,
     pub record_count: u32,
     pub physical_source_count: u32,
+    pub predicate_depth: u32,
 }
 
 pub struct LancerConfig {
@@ -78,6 +79,7 @@ impl Default for TestConfig {
             test_run_count: 1,
             oracle_reps: 2,
             test_case_count: 5,
+            predicate_depth: 3,
         }
     }
 }

@@ -15,6 +15,13 @@ pub struct KeyAggregationCountQueryGen {
     window_desc: WindowDescriptor,
 }
 
+impl KeyAggregationCountQueryGen {
+    pub fn with_predicate_depth(mut self, depth: u32) -> Self {
+        self.predicate_depth = depth;
+        self
+    }
+}
+
 impl QueryGen for KeyAggregationCountQueryGen {
     fn new(schema: &StreamSchema) -> Self {
         let source = random_source(&schema);

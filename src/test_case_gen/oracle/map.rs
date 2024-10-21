@@ -19,6 +19,13 @@ pub struct MapQueryGen {
     expr: ArithmeticExpr,
 }
 
+impl MapQueryGen {
+    pub fn with_predicate_depth(mut self, depth: u32) -> Self {
+        self.predicate_depth = depth;
+        self
+    }
+}
+
 fn generate_arithmetic_expr(fields: &[Field]) -> ArithmeticExpr {
     // ExprBuilder::field("value").build_arith().unwrap()
     ArithmeticExpr(loop {

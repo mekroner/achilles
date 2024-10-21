@@ -98,11 +98,13 @@ impl TryFrom<&Yaml> for QueryGenStrategy {
     }
 }
 
-pub struct QueryGenFactory {}
+pub struct QueryGenFactory {
+    predicate_depth: u32,
+}
 
 impl QueryGenFactory {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(predicate_depth: u32) -> Self {
+        Self { predicate_depth }
     }
 
     pub fn create_query_gen(
@@ -111,18 +113,42 @@ impl QueryGenFactory {
         strat: QueryGenStrategy,
     ) -> Box<dyn QueryGen> {
         match strat {
-            QueryGenStrategy::Filter => Box::new(FilterQueryGen::new(schema)),
-            QueryGenStrategy::Map => Box::new(MapQueryGen::new(schema)),
-            QueryGenStrategy::AggMin => Box::new(AggregationMinQueryGen::new(schema)),
-            QueryGenStrategy::AggMax => Box::new(AggregationMaxQueryGen::new(schema)),
-            QueryGenStrategy::AggSum => Box::new(AggregationSumQueryGen::new(schema)),
-            QueryGenStrategy::AggCount => Box::new(AggregationCountQueryGen::new(schema)),
-            QueryGenStrategy::AggAvg => Box::new(AggregationAvgQueryGen::new(schema)),
-            QueryGenStrategy::KeyAggMin => Box::new(KeyAggregationMinQueryGen::new(schema)),
-            QueryGenStrategy::KeyAggMax => Box::new(KeyAggregationMaxQueryGen::new(schema)),
-            QueryGenStrategy::KeyAggSum =>  Box::new(KeyAggregationSumQueryGen::new(schema)),
-            QueryGenStrategy::KeyAggCount => Box::new(KeyAggregationCountQueryGen::new(schema)),
-            QueryGenStrategy::KeyAggAvg => Box::new(KeyAggregationAvgQueryGen::new(schema)),
+            QueryGenStrategy::Filter => {
+                Box::new(FilterQueryGen::new(schema).with_predicate_depth(self.predicate_depth))
+            }
+            QueryGenStrategy::Map => {
+                Box::new(MapQueryGen::new(schema).with_predicate_depth(self.predicate_depth))
+            }
+            QueryGenStrategy::AggMin => Box::new(
+                AggregationMinQueryGen::new(schema).with_predicate_depth(self.predicate_depth),
+            ),
+            QueryGenStrategy::AggMax => Box::new(
+                AggregationMaxQueryGen::new(schema).with_predicate_depth(self.predicate_depth),
+            ),
+            QueryGenStrategy::AggSum => Box::new(
+                AggregationSumQueryGen::new(schema).with_predicate_depth(self.predicate_depth),
+            ),
+            QueryGenStrategy::AggCount => Box::new(
+                AggregationCountQueryGen::new(schema).with_predicate_depth(self.predicate_depth),
+            ),
+            QueryGenStrategy::AggAvg => Box::new(
+                AggregationAvgQueryGen::new(schema).with_predicate_depth(self.predicate_depth),
+            ),
+            QueryGenStrategy::KeyAggMin => Box::new(
+                KeyAggregationMinQueryGen::new(schema).with_predicate_depth(self.predicate_depth),
+            ),
+            QueryGenStrategy::KeyAggMax => Box::new(
+                KeyAggregationMaxQueryGen::new(schema).with_predicate_depth(self.predicate_depth),
+            ),
+            QueryGenStrategy::KeyAggSum => Box::new(
+                KeyAggregationSumQueryGen::new(schema).with_predicate_depth(self.predicate_depth),
+            ),
+            QueryGenStrategy::KeyAggCount => Box::new(
+                KeyAggregationCountQueryGen::new(schema).with_predicate_depth(self.predicate_depth),
+            ),
+            QueryGenStrategy::KeyAggAvg => Box::new(
+                KeyAggregationAvgQueryGen::new(schema).with_predicate_depth(self.predicate_depth),
+            ),
             QueryGenStrategy::WinPartMin => Box::new(WindowPartMinQueryGen::new(schema)),
             QueryGenStrategy::WinPartMax => Box::new(WindowPartMaxQueryGen::new(schema)),
             QueryGenStrategy::WinPartSum => Box::new(WindowPartSumQueryGen::new(schema)),

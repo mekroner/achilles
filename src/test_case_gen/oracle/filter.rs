@@ -13,6 +13,13 @@ pub struct FilterQueryGen {
     source: LogicalSource,
 }
 
+impl FilterQueryGen {
+    pub fn with_predicate_depth(mut self, depth: u32) -> Self {
+        self.predicate_depth = depth;
+        self
+    }
+}
+
 
 impl QueryGen for FilterQueryGen {
     fn new(schema: &StreamSchema) -> Self {
