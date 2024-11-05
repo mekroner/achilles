@@ -1,8 +1,15 @@
-use std::{fs, path::{Path, PathBuf}};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use yaml_rust2::{Yaml, YamlLoader};
 
-use crate::{config::{FilePathConfig, TestConfig}, LancerConfig};
+use crate::{
+    config::{FilePathConfig, TestConfig},
+    nes_query_comp_config::NesQueryCompilerConfig,
+    LancerConfig,
+};
 
 // FIXME: fully implement this function
 pub fn load_config(path: &Path) -> LancerConfig {
@@ -26,6 +33,7 @@ pub fn load_config(path: &Path) -> LancerConfig {
                 match key_str.as_str() {
                     "test_config" => config.test_config = parse_test_config(value),
                     "path_config" => config.path_config = parse_path_config(value),
+                    "query_comp_config" => config.query_comp_config = parse_query_comp_config(value),
                     _ => {}
                 }
             }
@@ -169,6 +177,74 @@ fn parse_path_config(yaml: &Yaml) -> FilePathConfig {
                             continue;
                         };
                         config.test_set_results_file = PathBuf::from(test_set_results_file);
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+    config
+}
+
+fn parse_query_comp_config(yaml: &Yaml) -> NesQueryCompilerConfig {
+    let mut config = NesQueryCompilerConfig::default();
+    if let Yaml::Hash(ref hash) = yaml {
+        for (key, value) in hash {
+            if let Yaml::String(ref key_str) = key {
+                match key_str.as_str() {
+                    "pipelining_strategy" => {
+                        let pipelining_strategy = match value.try_into() {
+                            Ok(ok) => ok,
+                            Err(err) => {
+                                log::error!("Unable to parse compilation_strategy: {err}");
+                                continue;
+                            }
+                        };
+                        config.pipelining_strategy = pipelining_strategy;
+                    }
+
+                    "compilation_strategy" => {
+                        let compilation_strategy = match value.try_into() {
+                            Ok(ok) => ok,
+                            Err(err) => {
+                                log::error!("Unable to parse compilation_strategy: {err}");
+                                continue;
+                            }
+                        };
+                        config.compilation_strategy = compilation_strategy;
+                    }
+
+                    "output_buffer_optimization_level" => {
+                        let output_buffer_optimization_level = match value.try_into() {
+                            Ok(ok) => ok,
+                            Err(err) => {
+                                log::error!("Unable to parse output_buffer_optimization_level: {err}");
+                                continue;
+                            }
+                        };
+                        config.output_buffer_optimization_level = output_buffer_optimization_level;
+                    }
+
+                    "windowing_strategy" => {
+                        let windowing_strategy = match value.try_into() {
+                            Ok(ok) => ok,
+                            Err(err) => {
+                                log::error!("Unable to parse windowing_strategy: {err}");
+                                continue;
+                            }
+                        };
+                        config.windowing_strategy = windowing_strategy;
+                    }
+
+                    "query_compiler_type" => {
+                        let query_compiler_type = match value.try_into() {
+                            Ok(ok) => ok,
+                            Err(err) => {
+                                log::error!("Unable to parse query_compiler_type: {err}");
+                                continue;
+                            }
+                        };
+                        config.query_compiler_type = query_compiler_type;
                     }
                     _ => {}
                 }

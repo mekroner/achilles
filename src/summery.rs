@@ -22,6 +22,18 @@ struct SummaryStatsEntry {
     diff_count: u32,
 }
 
+impl SummaryStatsEntry {
+    fn success_rates(&self) -> SummerySuccessRate {
+        let exec_success_rate = self.success_count as f32 / self.total_count as f32;
+        let eval_success_rate =
+            (self.equal_count + self.reorder_count) as f32 / self.total_res_count as f32;
+        SummerySuccessRate {
+            exec_success_rate,
+            eval_success_rate,
+        }
+    }
+}
+
 impl AddAssign for SummaryStatsEntry {
     fn add_assign(&mut self, rhs: Self) {
         self.total_count += rhs.total_count;
@@ -36,9 +48,37 @@ impl AddAssign for SummaryStatsEntry {
     }
 }
 
+struct SummerySuccessRate {
+    exec_success_rate: f32,
+    eval_success_rate: f32,
+}
+
+struct SummerySuccessRateVariance {
+    exec_variance: f32,
+    eval_variance: f32,
+}
+
 #[derive(Default)]
 struct SummaryStats {
     stats: HashMap<QueryGenStrategy, SummaryStatsEntry>,
+}
+
+impl SummaryStats {
+    fn success_rates(&self) -> HashMap<QueryGenStrategy, SummerySuccessRate> {
+        let mut map = HashMap::new();
+        for (strategy, entry) in &self.stats {
+            map.insert(*strategy, entry.success_rates());
+        }
+        map
+    }
+
+    fn total_success_rates(&self) -> SummerySuccessRate {
+        let mut all_totals = SummaryStatsEntry::default();
+        for (_, entry) in &self.stats {
+            all_totals += entry.clone();
+        }
+        all_totals.success_rates()
+    }
 }
 
 impl AddAssign for SummaryStats {
@@ -57,14 +97,16 @@ impl fmt::Display for SummaryStats {
         // header
         writeln!(
             f,
-            "{:<15} | {:<10} {:<10} {:<10} {:<10} {:<10} | {:<10} {:<10} {:<10} {:<10}",
+            "{:<15} | {:<10} {:<10} {:<10} {:<10} {:<10} {:<10} | {:<10} {:<10} {:<10} {:<10} {:<10}",
             "Oracle",
             "Total",
             "Success",
+            "Succ Rate",
             "Fail",
             "Timeout",
             "Skipped",
             "TotalRes",
+            "Succ Rate",
             "Equal",
             "Reorder",
             "Diff"
@@ -76,14 +118,16 @@ impl fmt::Display for SummaryStats {
         for (strategy, entry) in &self.stats {
             writeln!(
                 f,
-                "{:<15} | {:<10} {:<10} {:<10} {:<10} {:<10} | {:<10} {:<10} {:<10} {:<10}",
+                "{:<15} | {:<10} {:<10} {:<10} {:<10} {:<10} {:<10} | {:<10} {:<10} {:<10} {:<10} {:<10}",
                 format!("{:?}", strategy),
                 entry.total_count,
                 entry.success_count,
+                entry.success_count as f32 / entry.total_count as f32,
                 entry.fail_count,
                 entry.timeout_count,
                 entry.skipped_count,
                 entry.total_res_count,
+                (entry.equal_count + entry.reorder_count) as f32 / entry.total_res_count as f32,
                 entry.equal_count,
                 entry.reorder_count,
                 entry.diff_count
@@ -103,14 +147,16 @@ impl fmt::Display for SummaryStats {
 
         writeln!(
             f,
-            "{:<15} | {:<10} {:<10} {:<10} {:<10} {:<10} | {:<10} {:<10} {:<10} {:<10}",
+            "{:<15} | {:<10} {:<10} {:<10} {:<10} {:<10} {:<10} | {:<10} {:<10} {:<10} {:<10} {:<10}",
             "All",
             all_totals.total_count,
             all_totals.success_count,
+            all_totals.success_count as f32 / all_totals.total_count as f32,
             all_totals.fail_count,
             all_totals.timeout_count,
             all_totals.skipped_count,
             all_totals.total_res_count,
+            (all_totals.equal_count + all_totals.reorder_count) as f32 / all_totals.total_res_count as f32,
             all_totals.equal_count,
             all_totals.reorder_count,
             all_totals.diff_count

@@ -67,12 +67,43 @@ impl Into<Yaml> for &PipeliningStrategy {
     }
 }
 
+impl TryFrom<&Yaml> for PipeliningStrategy {
+    type Error = String;
+
+    fn try_from(value: &Yaml) -> Result<Self, Self::Error> {
+        let Some(str) = value.as_str() else {
+            return Err(format!("Unable to parse Pipelining Strategy."));
+        };
+        match str {
+            "OPERATOR_FUSION" => Ok(PipeliningStrategy::OperatorFusion),
+            "OPERATOR_AT_A_TIME" => Ok(PipeliningStrategy::OperatorAtATime),
+            err => Err(format!("Unknown Pipelining Strategy: {err}")),
+        }
+    }
+}
+
 impl Into<Yaml> for &CompilationStrategy {
     fn into(self) -> Yaml {
         match self {
             CompilationStrategy::Fast => Yaml::String("FAST".to_string()),
             CompilationStrategy::Debug => Yaml::String("DEBUG".to_string()),
             CompilationStrategy::Optimize => Yaml::String("OPTIMIZE".to_string()),
+        }
+    }
+}
+
+impl TryFrom<&Yaml> for CompilationStrategy {
+    type Error = String;
+
+    fn try_from(value: &Yaml) -> Result<Self, Self::Error> {
+        let Some(str) = value.as_str() else {
+            return Err(format!("Unable to parse Compilation Strategy."));
+        };
+        match str {
+            "FAST" => Ok(CompilationStrategy::Fast),
+            "DEBUG" => Ok(CompilationStrategy::Debug),
+            "OPTIMIZE" => Ok(CompilationStrategy::Optimize),
+            err => Err(format!("Unknown Compilation Strategy: {err}")),
         }
     }
 }
@@ -98,12 +129,47 @@ impl Into<Yaml> for &OutputBufferOptimizationLevel {
     }
 }
 
+impl TryFrom<&Yaml> for OutputBufferOptimizationLevel {
+    type Error = String;
+
+    fn try_from(value: &Yaml) -> Result<Self, Self::Error> {
+        let Some(str) = value.as_str() else {
+            return Err(format!("Unable to parse OutputBufferOptimizationLevel."));
+        };
+        match str {
+            "ALL" => Ok(OutputBufferOptimizationLevel::All),
+            "NO" => Ok(OutputBufferOptimizationLevel::No),
+            "ONLY_INPLACE_OPERATIONS_NO_FALLBACK" => Ok(OutputBufferOptimizationLevel::OnlyInplaceOperationsNoFallback),
+            "REUSE_INPUT_BUFFER_AND_OMIT_OVERFLOW_CHECK_NO_FALLBACK" => Ok(OutputBufferOptimizationLevel::ReuseInputBufferAndOmitOverflowCheckNoFallback),
+            "REUSE_INPUT_BUFFER_NO_FALLBACK" => Ok(OutputBufferOptimizationLevel::ReuseInputBufferNoFallback),
+            "OMIT_OVERFLOW_CHECK_NO_FALLBACK" => Ok(OutputBufferOptimizationLevel::OmitOverflowCheckNoFallback),
+            err => Err(format!("Unknown OutputBufferOptimizationLevel: {err}")),
+        }
+    }
+}
+
 impl Into<Yaml> for &WindowingStrategy {
     fn into(self) -> Yaml {
         match self {
             WindowingStrategy::Legacy => Yaml::String("LEGACY".to_string()),
             WindowingStrategy::Slicing => Yaml::String("SLICING".to_string()),
             WindowingStrategy::Bucketing => Yaml::String("BUCKETING".to_string()),
+        }
+    }
+}
+
+impl TryFrom<&Yaml> for WindowingStrategy {
+    type Error = String;
+
+    fn try_from(value: &Yaml) -> Result<Self, Self::Error> {
+        let Some(str) = value.as_str() else {
+            return Err(format!("Unable to parse WindowingStrategy."));
+        };
+        match str {
+            "LEGACY" => Ok(WindowingStrategy::Legacy),
+            "SLICING" => Ok(WindowingStrategy::Slicing),
+            "BUCKETING" => Ok(WindowingStrategy::Bucketing),
+            err => Err(format!("Unknown WindowingStrategy: {err}")),
         }
     }
 }
@@ -117,6 +183,21 @@ impl Into<Yaml> for &QueryCompilerType {
             QueryCompilerType::NautilusQueryCompiler => {
                 Yaml::String("NAUTILUS_QUERY_COMPILER".to_string())
             }
+        }
+    }
+}
+
+impl TryFrom<&Yaml> for QueryCompilerType {
+    type Error = String;
+
+    fn try_from(value: &Yaml) -> Result<Self, Self::Error> {
+        let Some(str) = value.as_str() else {
+            return Err(format!("Unable to parse DefaultQueryCompiler."));
+        };
+        match str {
+            "DEFAULT_QUERY_COMPILER" => Ok(QueryCompilerType::DefaultQueryCompiler),
+            "NAUTILUS_QUERY_COMPILER" => Ok(QueryCompilerType::NautilusQueryCompiler),
+            err => Err(format!("Unknown QueryCompilerType: {err}")),
         }
     }
 }
